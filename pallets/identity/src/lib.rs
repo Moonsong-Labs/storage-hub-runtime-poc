@@ -1,5 +1,18 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use core::{cmp::Ord, fmt::Debug};
+use frame_support::{
+	codec::FullCodec,
+	ensure,
+	pallet_prelude::{
+		DispatchError, DispatchResult, MaxEncodedLen, MaybeSerializeDeserialize, Member, Parameter,
+	},
+	scale_info,
+	sp_runtime::{
+		traits::{AtLeast32BitUnsigned, Get},
+		ArithmeticError,
+	},
+};
 pub use pallet::*;
 
 #[cfg(test)]
@@ -150,5 +163,85 @@ pub mod pallet {
 
 			Ok(())
 		}
+	}
+}
+
+/// An identity trait that provides a way to lookup known registered users.
+///
+/// It is abstracted over the AccountId type, User type and total number of users.
+pub trait IdentityInterface {
+	/// The type which can be used to identify accounts.
+	/// ? Are these trait bounds correct?
+	type AccountId: Parameter + Member + MaybeSerializeDeserialize + Debug + Ord + MaxEncodedLen;
+	/// The type which represents a registered user.
+	type User: Parameter + Member + MaybeSerializeDeserialize + Debug + Ord + MaxEncodedLen;
+	/// The type which represents the total number of registered users.
+	type UserCount: Parameter
+		+ Member
+		+ MaybeSerializeDeserialize
+		+ Ord
+		+ AtLeast32BitUnsigned
+		+ FullCodec
+		+ Copy
+		+ Default
+		+ Debug
+		+ scale_info::TypeInfo
+		+ MaxEncodedLen;
+
+	/// Lookup a registered user by their AccountId.
+	fn get_user(who: Self::AccountId) -> Option<Self::User>;
+
+	/// Lookup the total number of registered users.
+	fn total_users() -> Self::UserCount;
+
+	/// Register a new user.
+	fn register_user(who: Self::AccountId) -> DispatchResult;
+}
+
+impl<T: Config> IdentityInterface for Pallet<T> {
+	type AccountId = T::AccountId;
+
+	type User = ();
+
+	type UserCount = u128;
+
+	fn get_user(who: Self::AccountId) -> Option<Self::User> {
+		if Users::<T>::contains_key(&who) {
+			Some(())
+		} else {
+			None
+		}
+	}
+
+	fn total_users() -> Self::UserCount {
+		Count::<T>::get()
+	}
+
+	fn register_user(who: Self::AccountId) -> frame_support::pallet_prelude::DispatchResult {
+		// Check that user is not already registered.
+		ensure!(!Users::<T>::contains_key(&who), Error::<T>::AlreadyRegistered);
+
+		// Increment user count and return error if maximum is reached.
+		let mut count = Count::<T>::get();
+		ensure!(count < T::MaxUsers::get(), Error::<T>::MaximumOfUsersReached);
+		count =
+			match count.checked_add(1) {
+				Some(count) => count,
+				None => {
+					#[cfg(test)]
+					unreachable!("Overflow cannot happen after just checking that count < T::MaxUsers::get()");
+
+					#[allow(unreachable_code)]
+					{
+						Err(DispatchError::Arithmetic(ArithmeticError::Overflow))?
+					}
+				},
+			};
+		Count::<T>::put(count);
+
+		// Register user.
+		Users::<T>::insert(&who, ());
+
+		Ok(())
 	}
 }
