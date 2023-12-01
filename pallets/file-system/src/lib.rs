@@ -16,10 +16,16 @@ mod benchmarking;
 pub mod weights;
 pub use weights::*;
 
+mod types;
+
 #[frame_support::pallet]
 pub mod pallet {
-	use super::*;
-	use frame_support::pallet_prelude::*;
+	use super::{types::*, *};
+	use frame_support::{
+		dispatch::{fmt::Debug, HasCompact},
+		pallet_prelude::*,
+		sp_runtime::traits::{AtLeast32Bit, MaybeDisplay},
+	};
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
@@ -32,24 +38,93 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Type representing the weight of this pallet
 		type WeightInfo: WeightInfo;
+
+		/// The type for Content IDs of files, generally a hash.
+		type ContentId: Parameter
+			+ Member
+			+ MaybeSerializeDeserialize
+			+ Debug
+			+ Default
+			+ MaybeDisplay
+			+ AtLeast32Bit
+			+ Copy
+			+ MaxEncodedLen;
+
+		/// The type for Storage Provider IDs, generally a hash.
+		type StorageProviderId: Parameter
+			+ Member
+			+ MaybeSerializeDeserialize
+			+ Debug
+			+ Default
+			+ MaybeDisplay
+			+ AtLeast32Bit
+			+ Copy
+			+ MaxEncodedLen;
+
+		/// The unit for representing the size of a file.
+		type StorageCount: Parameter
+			+ Member
+			+ MaybeSerializeDeserialize
+			+ Debug
+			+ Default
+			+ MaybeDisplay
+			+ AtLeast32Bit
+			+ Copy
+			+ MaxEncodedLen
+			+ HasCompact;
+
+		type AssignmentThreshold: Parameter
+			+ Member
+			+ MaybeSerializeDeserialize
+			+ Debug
+			+ Default
+			+ MaybeDisplay
+			+ AtLeast32Bit
+			+ Copy
+			+ MaxEncodedLen
+			+ HasCompact;
+
+		/// The maximum number of BSPs per file.
+		#[pallet::constant]
+		type MaxBsps: Get<u32>;
+
+		/// The maximum size of a file path in bytes.
+		#[pallet::constant]
+		type MaxFilePathSize: Get<u32>;
+
+		/// The minimum threshold that the randomness criteria operation result
+		/// should meet, for the caller to instantly be eligible as BSP for that
+		/// file. This minimum threshold should decrease when more BSPs are
+		/// added to the system, and increased if BSPs leave the system.
+		#[pallet::constant]
+		type MinBspsAssignmentThreshold: Get<Self::AssignmentThreshold>;
 	}
 
-	// The pallet's runtime storage items.
-	// https://docs.substrate.io/main-docs/build/runtime-storage/
 	#[pallet::storage]
-	#[pallet::getter(fn something)]
-	// Learn more about declaring storage items:
-	// https://docs.substrate.io/main-docs/build/runtime-storage/#declaring-storage-items
-	pub type Something<T> = StorageValue<_, u32>;
+	pub type FilesMapping<T: Config> =
+		StorageMap<_, Blake2_128Concat, FileLocation<T>, FileMetadata<T>>;
 
-	// Pallets use events to inform users when important changes are made.
-	// https://docs.substrate.io/main-docs/build/events-errors/
+	#[pallet::storage]
+	#[pallet::getter(fn total_used_bsps_storage)]
+	pub type TotalUsedBspStorage<T: Config> = StorageValue<_, <T as Config>::StorageCount>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Event documentation should end with an array that provides descriptive names for event
-		/// parameters. [something, who]
-		SomethingStored { something: u32, who: T::AccountId },
+		NewStorageRequest {
+			who: T::AccountId,
+			location: Vec<u8>,
+			content_id: u32,
+			size: u32,
+			sender_multiaddress: u32,
+		},
+
+		NewBspVolunteer {
+			who: T::AccountId,
+			location: Vec<u8>,
+			content_id: u32,
+			bsp_multiaddress: u32,
+		},
 	}
 
 	// Errors inform users that something went wrong.
@@ -62,47 +137,22 @@ pub mod pallet {
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
-	// These functions materialize as "extrinsics", which are often compared to transactions.
+	// These functions materialise as "extrinsics", which are often compared to transactions.
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// An example dispatchable that takes a singles value as a parameter, writes the value to
-		/// storage and emits an event. This function must be dispatched by a signed extrinsic.
+		// TODO: Document
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::do_something())]
-		pub fn do_something(origin: OriginFor<T>, something: u32) -> DispatchResult {
-			// Check that the extrinsic was signed and get the signer.
-			// This function will return an error if the extrinsic is not signed.
-			// https://docs.substrate.io/main-docs/build/origins/
-			let who = ensure_signed(origin)?;
-
-			// Update storage.
-			<Something<T>>::put(something);
-
-			// Emit an event.
-			Self::deposit_event(Event::SomethingStored { something, who });
-			// Return a successful DispatchResultWithPostInfo
-			Ok(())
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1,1).ref_time())]
+		pub fn request_storage(origin: OriginFor<T>, something: u32) -> DispatchResult {
+			unimplemented!();
 		}
 
-		/// An example dispatchable that may throw a custom error.
+		// TODO: Document
 		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::cause_error())]
-		pub fn cause_error(origin: OriginFor<T>) -> DispatchResult {
-			let _who = ensure_signed(origin)?;
-
-			// Read a value from storage.
-			match <Something<T>>::get() {
-				// Return an error if the value has not been set.
-				None => return Err(Error::<T>::NoneValue.into()),
-				Some(old) => {
-					// Increment the value read from storage; will error in the event of overflow.
-					let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
-					// Update the value in storage with the incremented result.
-					<Something<T>>::put(new);
-					Ok(())
-				},
-			}
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1,1).ref_time())]
+		pub fn bsp_volunteer(origin: OriginFor<T>, something: u32) -> DispatchResult {
+			unimplemented!();
 		}
 	}
 }
