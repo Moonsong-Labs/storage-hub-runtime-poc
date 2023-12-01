@@ -1,13 +1,13 @@
 [package]
-name = "pallet-template"
-version = "4.0.0-dev"
-description = "FRAME pallet template for defining custom runtime logic."
-authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
-homepage = "https://substrate.io"
+name = "pallet-file-system"
+version = "1.0.0-dev"
+description = "POC for a File System Pallet in Storage Hub."
+authors = ["ffarall"]
+homepage = "https://moonsonglabs.com/"
 edition = "2021"
 license = "MIT-0"
 publish = false
-repository = "https://github.com/substrate-developer-hub/substrate-node-template/"
+repository = "https://github.com/Moonsong-Labs/storage-hub-runtime-poc"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
