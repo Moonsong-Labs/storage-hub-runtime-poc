@@ -7,7 +7,6 @@ use scale_info::TypeInfo;
 #[scale_info(skip_type_params(T))]
 pub struct FileMetadata<T: crate::Config> {
 	pub content_id: ContentId<T>,
-	pub msp: StorageProviderId<T>,
 	pub bsps: BoundedVec<StorageProviderId<T>, MaxBsps<T>>,
 	pub is_public: bool,
 }
@@ -25,4 +24,7 @@ pub type MaxFilePathSize<T> = <T as crate::Config>::MaxFilePathSize;
 pub type ContentId<T> = <T as crate::Config>::ContentId;
 
 /// Syntactic sugar for the type StorageProviderId used in the System pallet.
-pub type StorageProviderId<T> = <T as crate::Config>::StorageProviderId;
+pub type StorageProviderId<T> = <T as frame_system::Config>::AccountId;
+
+/// Syntactic sugar for the type StorageCount used in the System pallet.
+pub type StorageCount<T> = <T as crate::Config>::StorageCount;

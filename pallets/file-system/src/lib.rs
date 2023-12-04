@@ -17,6 +17,7 @@ pub mod weights;
 pub use weights::*;
 
 mod types;
+mod utils;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -39,19 +40,11 @@ pub mod pallet {
 		/// Type representing the weight of this pallet
 		type WeightInfo: WeightInfo;
 
+		/// Type to access the Identity Pallet, where BSPs are registered.
+		type BspsRegistry: pallet_identity::IdentityInterface<AccountId = Self::AccountId>;
+
 		/// The type for Content IDs of files, generally a hash.
 		type ContentId: Parameter
-			+ Member
-			+ MaybeSerializeDeserialize
-			+ Debug
-			+ Default
-			+ MaybeDisplay
-			+ AtLeast32Bit
-			+ Copy
-			+ MaxEncodedLen;
-
-		/// The type for Storage Provider IDs, generally a hash.
-		type StorageProviderId: Parameter
 			+ Member
 			+ MaybeSerializeDeserialize
 			+ Debug
@@ -101,6 +94,10 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
+	pub type StorageRequests<T: Config> =
+		StorageMap<_, Blake2_128Concat, FileLocation<T>, FileMetadata<T>>;
+
+	#[pallet::storage]
 	pub type FilesMapping<T: Config> =
 		StorageMap<_, Blake2_128Concat, FileLocation<T>, FileMetadata<T>>;
 
@@ -113,16 +110,17 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		NewStorageRequest {
 			who: T::AccountId,
-			location: Vec<u8>,
-			content_id: u32,
-			size: u32,
+			location: FileLocation<T>,
+			content_id: ContentId<T>,
+			size: StorageCount<T>,
+			// TODO: Add multiaddress type
 			sender_multiaddress: u32,
 		},
 
 		NewBspVolunteer {
 			who: T::AccountId,
-			location: Vec<u8>,
-			content_id: u32,
+			location: FileLocation<T>,
+			content_id: ContentId<T>,
 			bsp_multiaddress: u32,
 		},
 	}
@@ -130,10 +128,18 @@ pub mod pallet {
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Error names should be descriptive.
-		NoneValue,
-		/// Errors should have helpful documentation associated with them.
-		StorageOverflow,
+		/// Trying to register a storage request for a file that is already registered.
+		StorageRequestAlreadyRegistered,
+
+		/// Trying to volunteer as BSP for a storage request, when sender is not a registered BSP.
+		NotBsp,
+
+		/// Trying to operate over a non-existing storage request.
+		StorageRequestNotRegistered,
+
+		/// Trying to volunteer a BSP for a storage request, when that BSP is already registered
+		/// for that storage request.
+		BspAlreadyRegistered,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -144,15 +150,56 @@ pub mod pallet {
 		// TODO: Document
 		#[pallet::call_index(0)]
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1,1).ref_time())]
-		pub fn request_storage(origin: OriginFor<T>, something: u32) -> DispatchResult {
-			unimplemented!();
+		pub fn request_storage(
+			origin: OriginFor<T>,
+			location: FileLocation<T>,
+			content_id: ContentId<T>,
+			size: StorageCount<T>,
+			// TODO: Add multiaddress type
+			sender_multiaddress: u32,
+		) -> DispatchResult {
+			// Check that the extrinsic was signed and get the signer.
+			let who = ensure_signed(origin)?;
+
+			// Perform validations and register storage request.
+			Self::do_request_storage(location.clone(), content_id)?;
+
+			// Emit new storage request event.
+			Self::deposit_event(Event::NewStorageRequest {
+				who,
+				location,
+				content_id,
+				size,
+				sender_multiaddress,
+			});
+
+			Ok(())
 		}
 
 		// TODO: Document
 		#[pallet::call_index(1)]
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1,1).ref_time())]
-		pub fn bsp_volunteer(origin: OriginFor<T>, something: u32) -> DispatchResult {
-			unimplemented!();
+		pub fn bsp_volunteer(
+			origin: OriginFor<T>,
+			location: FileLocation<T>,
+			content_id: ContentId<T>,
+			bsp_multiaddress: u32,
+		) -> DispatchResult {
+			// Check that the extrinsic was signed and get the signer.
+			let who = ensure_signed(origin)?;
+
+			// Perform validations and register Storage Provider as BSP for file.
+			Self::do_bsp_volunteer(who.clone(), location.clone())?;
+
+			// Emit new BSP volunteer event.
+			Self::deposit_event(Event::NewBspVolunteer {
+				who,
+				location,
+				content_id,
+				bsp_multiaddress,
+			});
+
+			Ok(())
 		}
 	}
 }
