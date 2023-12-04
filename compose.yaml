@@ -1,0 +1,70 @@
+# Comments are provided throughout this file to help you get started.
+# If you need more help, visit the Docker compose reference guide at
+# https://docs.docker.com/compose/compose-file/
+
+# Here the instructions define your application as a service called "server".
+# This service is built from the Dockerfile in the current directory.
+# You can add other services your application may depend on here, such as a
+# database or a cache. For examples, see the Awesome Compose repository:
+# https://github.com/docker/awesome-compose
+services:
+  storagehub:
+    build:
+      context: ./storage-hub-runtime-poc
+    networks:
+      - internet
+    ports:
+      - 9944:9944
+      - 9933:9933
+      - 9615:9615
+      - 30333:30333
+    command:
+      - "--dev"
+      - "--unsafe-rpc-external"
+    healthcheck:
+      test: ["CMD", "curl", "-v", "http://localhost:9944/health"]
+      interval: 3s
+      timeout: 10s
+      retries: 5
+  msp:
+    depends_on:
+      storagehub:
+        condition: service_healthy
+    networks:
+      - internet
+    build:
+      context: ./storagehub-client-node
+      target: final
+    ports:
+      - "23456:23456"
+    command:
+      - "--secret-key-seed"
+      - "1"
+      - "--run-as"
+      - "msp-provider"
+      - "--chain"
+      - "compose"
+      - "--port"
+      - "23456"
+  user:
+    depends_on:
+      storagehub:
+        condition: service_healthy
+    networks:
+      - internet
+    build:
+      context: ./storagehub-client-node
+      target: final
+    ports:
+      - "34567:34567"
+    command:
+      - "--secret-key-seed"
+      - "2"
+      - "--run-as"
+      - "user"
+      - "--port"
+      - "34567"
+
+networks:
+  network-a:
+  internet:
