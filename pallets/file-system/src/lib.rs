@@ -25,7 +25,7 @@ pub mod pallet {
 	use frame_support::{
 		dispatch::{fmt::Debug, HasCompact},
 		pallet_prelude::*,
-		sp_runtime::traits::{AtLeast32Bit, MaybeDisplay},
+		sp_runtime::traits::{AtLeast32Bit, CheckEqual, MaybeDisplay, SimpleBitOps},
 	};
 	use frame_system::pallet_prelude::*;
 
@@ -48,10 +48,14 @@ pub mod pallet {
 			+ Member
 			+ MaybeSerializeDeserialize
 			+ Debug
-			+ Default
 			+ MaybeDisplay
-			+ AtLeast32Bit
+			+ SimpleBitOps
+			+ Ord
+			+ Default
 			+ Copy
+			+ CheckEqual
+			+ AsRef<[u8]>
+			+ AsMut<[u8]>
 			+ MaxEncodedLen;
 
 		/// The unit for representing the size of a file.
@@ -66,6 +70,8 @@ pub mod pallet {
 			+ MaxEncodedLen
 			+ HasCompact;
 
+		/// The threshold that the randomness criteria operation result should
+		/// meet, for the caller to instantly be eligible as BSP for that file.
 		type AssignmentThreshold: Parameter
 			+ Member
 			+ MaybeSerializeDeserialize
@@ -104,6 +110,11 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn total_used_bsps_storage)]
 	pub type TotalUsedBspStorage<T: Config> = StorageValue<_, <T as Config>::StorageCount>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn current_assignment_threshold)]
+	pub type CurrentAssignmentThreshold<T: Config> =
+		StorageValue<_, <T as Config>::AssignmentThreshold>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
