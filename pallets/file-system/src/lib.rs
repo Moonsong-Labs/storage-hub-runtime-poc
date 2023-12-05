@@ -91,6 +91,10 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxFilePathSize: Get<u32>;
 
+		/// The maximum size of a libp2p multiaddress in bytes.
+		#[pallet::constant]
+		type MaxMultiAddressSize: Get<u32>;
+
 		/// The minimum threshold that the randomness criteria operation result
 		/// should meet, for the caller to instantly be eligible as BSP for that
 		/// file. This minimum threshold should decrease when more BSPs are
@@ -124,15 +128,14 @@ pub mod pallet {
 			location: FileLocation<T>,
 			content_id: ContentId<T>,
 			size: StorageCount<T>,
-			// TODO: Add multiaddress type
-			sender_multiaddress: u32,
+			sender_multiaddress: MultiAddress<T>,
 		},
 
 		NewBspVolunteer {
 			who: T::AccountId,
 			location: FileLocation<T>,
 			content_id: ContentId<T>,
-			bsp_multiaddress: u32,
+			bsp_multiaddress: MultiAddress<T>,
 		},
 	}
 
@@ -166,8 +169,7 @@ pub mod pallet {
 			location: FileLocation<T>,
 			content_id: ContentId<T>,
 			size: StorageCount<T>,
-			// TODO: Add multiaddress type
-			sender_multiaddress: u32,
+			sender_multiaddress: MultiAddress<T>,
 		) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			let who = ensure_signed(origin)?;
@@ -194,7 +196,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			location: FileLocation<T>,
 			content_id: ContentId<T>,
-			bsp_multiaddress: u32,
+			bsp_multiaddress: MultiAddress<T>,
 		) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			let who = ensure_signed(origin)?;

@@ -1,6 +1,9 @@
 use crate::{mock::*, types::FileLocation, Event};
 use frame_support::assert_ok;
-use sp_runtime::traits::{BlakeTwo256, Hash};
+use sp_runtime::{
+	traits::{BlakeTwo256, Hash},
+	BoundedVec,
+};
 
 #[test]
 fn request_storage_success() {
@@ -19,7 +22,7 @@ fn request_storage_success() {
 			location.clone(),
 			content_id.clone(),
 			4,
-			1
+			BoundedVec::try_from(vec![1]).unwrap(),
 		));
 
 		// Assert that the correct event was deposited
@@ -29,7 +32,7 @@ fn request_storage_success() {
 				location,
 				content_id,
 				size: 4,
-				sender_multiaddress: 1,
+				sender_multiaddress: BoundedVec::try_from(vec![1]).unwrap(),
 			}
 			.into(),
 		);
@@ -57,15 +60,26 @@ fn bsp_volunteer_success() {
 			location.clone(),
 			content_id.clone(),
 			4,
-			1
+			BoundedVec::try_from(vec![1]).unwrap(),
 		));
 
 		// Dispatch BSP volunteer.
-		assert_ok!(FileSystem::bsp_volunteer(bsp.clone(), location.clone(), content_id.clone(), 2));
+		assert_ok!(FileSystem::bsp_volunteer(
+			bsp.clone(),
+			location.clone(),
+			content_id.clone(),
+			BoundedVec::try_from(vec![2]).unwrap()
+		));
 
 		// Assert that the correct event was deposited
 		System::assert_last_event(
-			Event::NewBspVolunteer { who: 2, location, content_id, bsp_multiaddress: 2 }.into(),
+			Event::NewBspVolunteer {
+				who: 2,
+				location,
+				content_id,
+				bsp_multiaddress: BoundedVec::try_from(vec![2]).unwrap(),
+			}
+			.into(),
 		);
 	});
 }
