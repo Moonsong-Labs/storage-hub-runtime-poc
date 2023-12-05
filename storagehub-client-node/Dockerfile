@@ -65,12 +65,12 @@ USER appuser
 COPY --from=build /bin/server /bin/
 
 RUN mkdir -p /tmp/files-to-upload; \
-    mkdir -p /tmp/download-files;
+    mkdir -p /tmp/downloaded-files;
 
 COPY --from=build /app/lorem /tmp/files-to-upload
 
 RUN chmod -R 777 /tmp/files-to-upload; \
-    chmod -R 777 /tmp/download-files;
+    chmod -R 777 /tmp/downloaded-files;
 
 # What the container should run when it is started.
 ENTRYPOINT ["/bin/server"]

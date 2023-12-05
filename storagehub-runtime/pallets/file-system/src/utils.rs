@@ -3,7 +3,7 @@ use pallet_identity::IdentityInterface;
 
 use crate::{
 	pallet,
-	types::{ContentId, FileLocation, FileMetadata},
+	types::{FileLocation, FileMetadata, Fingerprint},
 	Config, Error, FilesMapping, Pallet, StorageRequests,
 };
 
@@ -30,7 +30,7 @@ where
 {
 	pub fn do_request_storage(
 		location: FileLocation<T>,
-		content_id: ContentId<T>,
+		content_id: Fingerprint<T>,
 	) -> DispatchResult {
 		// TODO: Perform various checks of users funds, storage capacity, etc.
 		// TODO: Not relevant for PoC.

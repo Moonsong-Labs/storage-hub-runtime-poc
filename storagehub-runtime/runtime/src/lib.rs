@@ -274,6 +274,24 @@ impl pallet_template::Config for Runtime {
 	type WeightInfo = pallet_template::weights::SubstrateWeight<Runtime>;
 }
 
+impl pallet_identity::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type MaxUsers = ConstU128<1_000u128>;
+}
+
+impl pallet_file_system::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = ();
+	type BspsRegistry = PalletIdentity;
+	type Fingerprint = Hash;
+	type StorageCount = u128;
+	type AssignmentThreshold = u128;
+	type MaxBsps = ConstU32<5u32>;
+	type MaxFilePathSize = ConstU32<512u32>;
+	type MaxMultiAddressSize = ConstU32<512u32>;
+	type MinBspsAssignmentThreshold = ConstU128<1_000u128>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime {
@@ -284,6 +302,8 @@ construct_runtime!(
 		Balances: pallet_balances,
 		TransactionPayment: pallet_transaction_payment,
 		Sudo: pallet_sudo,
+		PalletIdentity: pallet_identity,
+		PalletFileSystem: pallet_file_system,
 		// Include the custom logic from the pallet-template in the runtime.
 		TemplateModule: pallet_template,
 	}
@@ -333,6 +353,8 @@ mod benches {
 		[pallet_balances, Balances]
 		[pallet_timestamp, Timestamp]
 		[pallet_sudo, Sudo]
+		[pallet_identity, PalletIdentity]
+		[pallet_file_system, PalletFileSystem]
 		[pallet_template, TemplateModule]
 	);
 }

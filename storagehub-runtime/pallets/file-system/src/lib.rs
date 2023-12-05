@@ -44,7 +44,7 @@ pub mod pallet {
 		type BspsRegistry: pallet_identity::IdentityInterface<AccountId = Self::AccountId>;
 
 		/// The type for Content IDs of files, generally a hash.
-		type ContentId: Parameter
+		type Fingerprint: Parameter
 			+ Member
 			+ MaybeSerializeDeserialize
 			+ Debug
@@ -126,7 +126,7 @@ pub mod pallet {
 		NewStorageRequest {
 			who: T::AccountId,
 			location: FileLocation<T>,
-			content_id: ContentId<T>,
+			fingerprint: Fingerprint<T>,
 			size: StorageCount<T>,
 			sender_multiaddress: MultiAddress<T>,
 		},
@@ -134,7 +134,7 @@ pub mod pallet {
 		NewBspVolunteer {
 			who: T::AccountId,
 			location: FileLocation<T>,
-			content_id: ContentId<T>,
+			fingerprint: Fingerprint<T>,
 			bsp_multiaddress: MultiAddress<T>,
 		},
 	}
@@ -167,7 +167,7 @@ pub mod pallet {
 		pub fn request_storage(
 			origin: OriginFor<T>,
 			location: FileLocation<T>,
-			content_id: ContentId<T>,
+			fingerprint: Fingerprint<T>,
 			size: StorageCount<T>,
 			sender_multiaddress: MultiAddress<T>,
 		) -> DispatchResult {
@@ -175,13 +175,13 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			// Perform validations and register storage request.
-			Self::do_request_storage(location.clone(), content_id)?;
+			Self::do_request_storage(location.clone(), fingerprint)?;
 
 			// Emit new storage request event.
 			Self::deposit_event(Event::NewStorageRequest {
 				who,
 				location,
-				content_id,
+				fingerprint,
 				size,
 				sender_multiaddress,
 			});
@@ -195,7 +195,7 @@ pub mod pallet {
 		pub fn bsp_volunteer(
 			origin: OriginFor<T>,
 			location: FileLocation<T>,
-			content_id: ContentId<T>,
+			fingerprint: Fingerprint<T>,
 			bsp_multiaddress: MultiAddress<T>,
 		) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
@@ -208,7 +208,7 @@ pub mod pallet {
 			Self::deposit_event(Event::NewBspVolunteer {
 				who,
 				location,
-				content_id,
+				fingerprint,
 				bsp_multiaddress,
 			});
 

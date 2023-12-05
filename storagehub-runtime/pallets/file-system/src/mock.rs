@@ -53,7 +53,7 @@ impl pallet_file_system::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type BspsRegistry = Identity;
-	type ContentId = H256;
+	type Fingerprint = H256;
 	type StorageCount = u128;
 	type AssignmentThreshold = u128;
 	type MaxBsps = ConstU32<5u32>;

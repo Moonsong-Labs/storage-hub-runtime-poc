@@ -30,7 +30,7 @@ fn request_storage_success() {
 			Event::NewStorageRequest {
 				who: 1,
 				location,
-				content_id,
+				fingerprint: content_id,
 				size: 4,
 				sender_multiaddress: BoundedVec::try_from(vec![1]).unwrap(),
 			}
@@ -76,7 +76,7 @@ fn bsp_volunteer_success() {
 			Event::NewBspVolunteer {
 				who: 2,
 				location,
-				content_id,
+				fingerprint: content_id,
 				bsp_multiaddress: BoundedVec::try_from(vec![2]).unwrap(),
 			}
 			.into(),

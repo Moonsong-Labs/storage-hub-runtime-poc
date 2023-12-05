@@ -7,7 +7,7 @@ mod node_runtime {}
 use std::{fs, path::Path, str::FromStr, thread, time};
 
 use libp2p::{multiaddr::Protocol, Multiaddr, PeerId};
-use node_runtime::template_module::events::RequestStore;
+use node_runtime::pallet_file_system::events::NewStorageRequest;
 use subxt::utils::AccountId32;
 use tracing::{debug, error, info};
 
@@ -16,7 +16,7 @@ use crate::{client::StorageHub, errors::StorageHubError};
 pub(crate) async fn run_and_subscribe_to_events(
     storage_hub: &mut StorageHub,
 ) -> Result<(), StorageHubError> {
-    info!("Subscribe 'RequestStore' on-chain finalized event");
+    info!("Subscribe 'NewStorageRequest' on-chain finalized event");
 
     let api = StorageHub::create_online_client_from_rpc(storage_hub.rpc_client.clone())
         .await
@@ -30,27 +30,28 @@ pub(crate) async fn run_and_subscribe_to_events(
 
         let events = block.events().await?;
 
-        // Event --> storage::RequestStore
-        if let Some(event) = events.find_first::<RequestStore>()? {
-            debug!("Received event storage::RequestStore: {:?}", event);
+        // Event --> storage::NewStorageRequest
+        if let Some(event) = events.find_first::<NewStorageRequest>()? {
+            debug!("Received event storage::NewStorageRequest: {:?}", event);
 
             let account_id: AccountId32 = AccountId32::from_str(&event.who.to_string())
                 .expect("Failed to convert `who` to AccountId32");
 
             let mut addr: Multiaddr = Multiaddr::from_str(
-                String::from_utf8(event.address.0)
+                String::from_utf8(event.sender_multiaddress.0)
                     .expect("Failed to cast event address bytes to Multiaddr")
                     .as_str(),
             )
             .expect("Failed to cast string to Multiaddr");
 
-            let file_id: String = String::from_utf8(event.file.id.0)
+            let file_id: String = String::from_utf8(event.location.0.to_vec())
                 .expect("Failed to convert bounded vec to string for file_id");
-            let content_hash: String = event.file.content_hash.to_string();
+            let content_hash: String = event.fingerprint.to_string();
+            let size: String = event.size.to_string();
 
             info!(
-                "Received RequestStore event - account_id: {}, peer: {}, file_id: {}, content_hash: {}",
-                account_id, addr, file_id, content_hash
+                "Received NewStorageRequest event - account_id: {}, peer: {}, file_id: {}, content_hash: {}, size: {}",
+                account_id, addr, file_id, content_hash, size
             );
 
             let peer_id: PeerId = match addr.pop().unwrap() {
