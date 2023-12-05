@@ -27,7 +27,7 @@ jobs:
 
       - name: Install Rust
         run: |
-          cd storage-hub-runtime-poc
+          cd storagehub-runtime
           rustup update stable --no-self-update
           rustup target add wasm32-unknown-unknown
 
@@ -36,11 +36,11 @@ jobs:
 
       - name: Check Build
         run: |
-          cd storage-hub-runtime-poc
+          cd storagehub-runtime
           SKIP_WASM_BUILD=1 cargo check --release
 
       - name: Check Build for Benchmarking
         run: |
-          cd storage-hub-runtime-poc
+          cd storagehub-runtime
           pushd node &&
           cargo check --features=runtime-benchmarks --release
