@@ -353,8 +353,6 @@ mod benches {
 		[pallet_balances, Balances]
 		[pallet_timestamp, Timestamp]
 		[pallet_sudo, Sudo]
-		[pallet_identity, PalletIdentity]
-		[pallet_file_system, PalletFileSystem]
 		[pallet_template, TemplateModule]
 	);
 }
