@@ -10,12 +10,14 @@ use libp2p::{
     request_response::{self, ProtocolSupport, ResponseChannel},
     tcp, yamux, Multiaddr, PeerId, StreamProtocol,
 };
+use tracing::info;
 use tracing_subscriber::EnvFilter;
 
 use crate::{Behaviour, EventLoop, FileResponse};
 
 #[derive(Clone)]
 pub(crate) struct Client {
+    pub(crate) upload_path: String,
     pub(crate) sender: mpsc::Sender<Command>,
 }
 
@@ -29,8 +31,13 @@ impl Client {
                 // Reply with the content of the file on incoming requests.
                 Some(Event::InboundRequest { file_id, channel }) => {
                     tracing::info!(file_id = ?file_id, "InboundRequest network event");
-                    self.respond_file(std::fs::read(format!("./{}", file_id)).unwrap(), channel)
-                        .await;
+                    self.respond_file(
+                        std::fs::read(format!("{}/{}", self.upload_path, file_id)).unwrap(),
+                        channel,
+                    )
+                    .await;
+
+                    info!("Responded to inbound request for file {}", file_id);
                 }
                 Some(Event::OutboundRequest {
                     peer,
@@ -138,6 +145,7 @@ pub(crate) enum Event {
 pub(crate) async fn new(
     secret_key_seed: Option<u8>,
     port: u16,
+    upload_path: String,
 ) -> Result<(Client, impl Stream<Item = Event>, EventLoop), Box<dyn Error>> {
     let _ = tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
@@ -177,13 +185,14 @@ pub(crate) async fn new(
         .with_swarm_config(|c| c.with_idle_connection_timeout(Duration::from_secs(60)))
         .build();
 
-    swarm.listen_on(format!("/ip4/127.0.0.1/tcp/{}", port).parse()?)?;
+    swarm.listen_on(format!("/ip4/0.0.0.0/tcp/{}", port).parse()?)?;
 
     let (command_sender, command_receiver) = mpsc::channel(0);
     let (event_sender, event_receiver) = mpsc::channel(0);
 
     Ok((
         Client {
+            upload_path,
             sender: command_sender,
         },
         event_receiver,

@@ -4,7 +4,7 @@
 )]
 mod node_runtime {}
 
-use std::{io::Write, str::FromStr, thread, time};
+use std::{fs, path::Path, str::FromStr, thread, time};
 
 use libp2p::{multiaddr::Protocol, Multiaddr, PeerId};
 use node_runtime::template_module::events::RequestStore;
@@ -63,14 +63,24 @@ pub(crate) async fn run_and_subscribe_to_events(
 
             match storage_hub
                 .network_client
-                .request_file(peer_id, addr, file_id)
+                .request_file(peer_id, addr, file_id.clone())
                 .await
             {
                 Ok(file) => {
                     tracing::info!("Received file from peer {:?}", peer_id);
-                    std::io::stdout()
-                        .write_all(&file)
-                        .expect("Stdout to be open.");
+
+                    let file_path = format!("{}/{}", storage_hub.file_download_path, file_id);
+
+                    // Create the directory if it does not exist
+                    if !Path::new(&storage_hub.file_download_path).exists() {
+                        fs::create_dir_all(&storage_hub.file_download_path)
+                            .expect("Failed to create directory");
+                    }
+
+                    // Download the file to the specified location
+                    fs::write(&file_path, &file).expect("Failed to write file");
+
+                    info!("File downloaded to: {}", file_path);
 
                     let wait: u64 = 3;
                     info!("Waiting {} seconds before run batch", wait);

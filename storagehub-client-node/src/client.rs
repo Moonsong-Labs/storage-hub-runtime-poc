@@ -15,6 +15,7 @@ use crate::{
 };
 
 pub(crate) struct StorageHub {
+    pub(crate) file_download_path: String,
     pub(crate) runtime: SupportedRuntime,
     pub(crate) rpc_client: RpcClient,
     pub(crate) network_client: network::Client,
@@ -67,6 +68,7 @@ impl StorageHub {
             chain, ws_address, name, version
         );
         StorageHub {
+            file_download_path: config.download_path.clone(),
             runtime: SupportedRuntime::Local,
             rpc_client,
             network_client,

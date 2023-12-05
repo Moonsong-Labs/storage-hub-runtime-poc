@@ -272,6 +272,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let (mut network_client, network_events, event_loop) = network::new(
         opts.libp2p_options.secret_key_seed,
         opts.libp2p_options.port,
+        opts.light_client_options.clone().upload_path,
     )
     .await?;
 

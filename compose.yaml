@@ -46,6 +46,8 @@ services:
       - "compose"
       - "--port"
       - "23456"
+      - "--download-path"
+      - "/tmp/downloaded-files"
   user:
     depends_on:
       storagehub:
@@ -64,6 +66,8 @@ services:
       - "user"
       - "--port"
       - "34567"
+      - "--upload-path"
+      - "/tmp/files-to-upload"
 
 networks:
   network-a:

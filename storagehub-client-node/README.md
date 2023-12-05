@@ -5,24 +5,24 @@
 ## Features
 
 - [ ] `subxt` (light client)
-    - [x] Connect to substrate node
-    - [x] Subscribe to events
-    - [ ] Send extrinsics
+  - [x] Connect to substrate node
+  - [x] Subscribe to events
+  - [ ] Send extrinsics
 - [ ] `libp2p` (peer-to-peer networking)
-    - [x] MSP node sends file request
-    - [ ] User validates MSP node is registered on chain
-    - [x] Establish connection between User and MSP node
-    - [x] Send file data
-    - [x] Receive file data
-    - [ ] MSP node validates data against `content_hash`
-    
+  - [x] MSP node sends file request
+  - [ ] User validates MSP node is registered on chain
+  - [x] Establish connection between User and MSP node
+  - [x] Send file data
+  - [x] Receive file data
+  - [ ] MSP node validates data against `content_hash`
+
 ## Demo
 
 ### Upload file from User client to MSP
 
 1. In one terminal clone and run the substrate node template
 
-    ```
+    ```bash
     git clone https://github.com/Moonsong-Labs/storage-hub-runtime-poc/tree/poc/michael
 
     git checkout poc/michael
