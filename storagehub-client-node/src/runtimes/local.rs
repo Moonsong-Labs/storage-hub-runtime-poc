@@ -4,11 +4,11 @@
 )]
 mod node_runtime {}
 
-use std::{fs, path::Path, str::FromStr, thread, time};
-
 use libp2p::{multiaddr::Protocol, Multiaddr, PeerId};
 use node_runtime::pallet_file_system::events::NewStorageRequest;
-use subxt::utils::AccountId32;
+use std::{fs, path::Path, str::FromStr, thread, time};
+use subxt::ext::sp_core::{sr25519::Pair, Pair as PairT};
+use subxt::{tx::PairSigner, utils::AccountId32};
 use tracing::{debug, error, info};
 
 use crate::{client::StorageHub, errors::StorageHubError};
@@ -37,7 +37,7 @@ pub(crate) async fn run_and_subscribe_to_events(
             let account_id: AccountId32 = AccountId32::from_str(&event.who.to_string())
                 .expect("Failed to convert `who` to AccountId32");
 
-            let mut addr: Multiaddr = Multiaddr::from_str(
+            let mut sender_multiaddr: Multiaddr = Multiaddr::from_str(
                 String::from_utf8(event.sender_multiaddress.0)
                     .expect("Failed to cast event address bytes to Multiaddr")
                     .as_str(),
@@ -51,10 +51,31 @@ pub(crate) async fn run_and_subscribe_to_events(
 
             info!(
                 "Received NewStorageRequest event - account_id: {}, peer: {}, file_id: {}, content_hash: {}, size: {}",
-                account_id, addr, file_id, content_hash, size
+                account_id, sender_multiaddr, file_id, content_hash, size
             );
 
-            let peer_id: PeerId = match addr.pop().unwrap() {
+            let peer = node_runtime::runtime_types::bounded_collections::bounded_vec::BoundedVec(
+                storage_hub.network_client.multiaddr.to_bytes(),
+            );
+
+            let volunteer_tx = node_runtime::tx().pallet_file_system().bsp_volunteer(
+                event.location,
+                event.fingerprint,
+                peer,
+            );
+
+            let owner: Pair = Pair::from_string("//Alice", None).expect("cannot create keypair");
+            let signer = PairSigner::new(owner);
+            let _ = api
+                .tx()
+                .sign_and_submit_then_watch_default(&volunteer_tx, &signer)
+                .await?
+                .wait_for_finalized_success()
+                .await?;
+
+            info!("Successfully volunteered for file_id: {}", file_id);
+
+            let peer_id: PeerId = match sender_multiaddr.pop().unwrap() {
                 Protocol::P2p(peer_id) => peer_id,
                 _ => {
                     eprintln!("Expected peer id in multiaddr");
@@ -64,7 +85,7 @@ pub(crate) async fn run_and_subscribe_to_events(
 
             match storage_hub
                 .network_client
-                .request_file(peer_id, addr, file_id.clone())
+                .request_file(peer_id, sender_multiaddr, file_id.clone())
                 .await
             {
                 Ok(file) => {

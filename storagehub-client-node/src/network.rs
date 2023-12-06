@@ -15,10 +15,71 @@ use tracing_subscriber::EnvFilter;
 
 use crate::{Behaviour, EventLoop, FileResponse};
 
+/// Create a new Swarm network
+pub(crate) async fn new(
+    secret_key_seed: Option<u8>,
+    port: u16,
+    upload_path: String,
+) -> Result<(Client, impl Stream<Item = Event>, EventLoop), Box<dyn Error>> {
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .try_init();
+
+    let id_keys = match secret_key_seed {
+        Some(seed) => {
+            let mut bytes = [0u8; 32];
+            bytes[0] = seed;
+            identity::Keypair::ed25519_from_bytes(bytes).unwrap()
+        }
+        None => identity::Keypair::generate_ed25519(),
+    };
+
+    let mut swarm = libp2p::SwarmBuilder::with_existing_identity(id_keys)
+        .with_async_std()
+        .with_tcp(
+            tcp::Config::default(),
+            noise::Config::new,
+            yamux::Config::default,
+        )?
+        .with_behaviour(|key| {
+            Ok(Behaviour {
+                request_response: request_response::cbor::Behaviour::new(
+                    [(
+                        StreamProtocol::new("/storagehub/0.1.0"),
+                        ProtocolSupport::Full,
+                    )],
+                    request_response::Config::default(),
+                ),
+                identify: identify::Behaviour::new(identify::Config::new(
+                    "/storagehub/0.1.0".to_string(),
+                    key.public(),
+                )),
+            })
+        })?
+        .with_swarm_config(|c| c.with_idle_connection_timeout(Duration::from_secs(60)))
+        .build();
+
+    swarm.listen_on(format!("/ip4/0.0.0.0/tcp/{}", port).parse()?)?;
+
+    let (command_sender, command_receiver) = mpsc::channel(0);
+    let (event_sender, event_receiver) = mpsc::channel(0);
+
+    Ok((
+        Client {
+            upload_path,
+            sender: command_sender,
+            multiaddr: swarm.local_peer_id().clone(),
+        },
+        event_receiver,
+        EventLoop::new(swarm, command_receiver, event_sender),
+    ))
+}
+
 #[derive(Clone)]
 pub(crate) struct Client {
     pub(crate) upload_path: String,
     pub(crate) sender: mpsc::Sender<Command>,
+    pub(crate) multiaddr: PeerId,
 }
 
 impl Client {
@@ -139,63 +200,4 @@ pub(crate) enum Event {
         addr: Multiaddr,
         file_id: String,
     },
-}
-
-/// Create a new Swarm network
-pub(crate) async fn new(
-    secret_key_seed: Option<u8>,
-    port: u16,
-    upload_path: String,
-) -> Result<(Client, impl Stream<Item = Event>, EventLoop), Box<dyn Error>> {
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env())
-        .try_init();
-
-    let id_keys = match secret_key_seed {
-        Some(seed) => {
-            let mut bytes = [0u8; 32];
-            bytes[0] = seed;
-            identity::Keypair::ed25519_from_bytes(bytes).unwrap()
-        }
-        None => identity::Keypair::generate_ed25519(),
-    };
-
-    let mut swarm = libp2p::SwarmBuilder::with_existing_identity(id_keys)
-        .with_async_std()
-        .with_tcp(
-            tcp::Config::default(),
-            noise::Config::new,
-            yamux::Config::default,
-        )?
-        .with_behaviour(|key| {
-            Ok(Behaviour {
-                request_response: request_response::cbor::Behaviour::new(
-                    [(
-                        StreamProtocol::new("/storagehub/0.1.0"),
-                        ProtocolSupport::Full,
-                    )],
-                    request_response::Config::default(),
-                ),
-                identify: identify::Behaviour::new(identify::Config::new(
-                    "/storagehub/0.1.0".to_string(),
-                    key.public(),
-                )),
-            })
-        })?
-        .with_swarm_config(|c| c.with_idle_connection_timeout(Duration::from_secs(60)))
-        .build();
-
-    swarm.listen_on(format!("/ip4/0.0.0.0/tcp/{}", port).parse()?)?;
-
-    let (command_sender, command_receiver) = mpsc::channel(0);
-    let (event_sender, event_receiver) = mpsc::channel(0);
-
-    Ok((
-        Client {
-            upload_path,
-            sender: command_sender,
-        },
-        event_receiver,
-        EventLoop::new(swarm, command_receiver, event_sender),
-    ))
 }

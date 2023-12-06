@@ -28,7 +28,8 @@ RUN --mount=type=bind,source=src,target=src \
     --mount=type=cache,target=/usr/local/cargo/registry/ \
     <<EOF
 set -e
-cargo build --locked --release
+rustup toolchain install nightly
+cargo +nightly build --release
 cp ./target/release/$APP_NAME /bin/server
 EOF
 
