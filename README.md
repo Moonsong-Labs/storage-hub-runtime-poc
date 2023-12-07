@@ -27,6 +27,9 @@ This will start the following services:
 
 - StorageHub runtime node
 - User node
+
+    The User node is built with the `./storagehub-client-node/files-to-upload` folder containing test files ready to upload to the StorageHub runtime.
+
 - Backup Storage Provider (BSP) node
 
     This will connect to the StorageHub runtime as a light client and start listening for file storage requests events and send transactions to volunteer to store files.
@@ -41,7 +44,7 @@ Execute the pallet Identity `registerUser` extrinsic in the [sudo](https://polka
 
 ![Alt text](./assets/sudo-register-user.png)
 
-Next request to store a file by executing the pallet StorageHub `requestStorage` extrinsic in the [extrinsics](https://polkadot.js.org/apps/#/extrinsics) page.
+Next, request to store a file by executing the pallet StorageHub `requestStorage` extrinsic in the [extrinsics](https://polkadot.js.org/apps/#/extrinsics) page.
 
 ![Alt text](./assets/request-file.png)
 
@@ -79,6 +82,8 @@ Notice the important logs are:
 - `Received file from peer ...`: The BSP node has received the file from the User node.
 
 - `File downloaded to: /tmp/downloaded-files/lorem`: The file has been downloaded to the BSP node.
+
+> You can re-execute the `requestStorage` extrinsic for the other `lorem-x` files.
 
 ## Updating the Runtime
 
