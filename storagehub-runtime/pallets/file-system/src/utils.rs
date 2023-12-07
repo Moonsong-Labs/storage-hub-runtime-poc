@@ -1,8 +1,12 @@
 use codec::{Decode, Encode};
 use frame_support::{ensure, pallet_prelude::DispatchResult, sp_runtime::BoundedVec, traits::Get};
+use frame_system::pallet_prelude::BlockNumberFor;
 use pallet_identity::IdentityInterface;
 use scale_info::prelude::vec::Vec;
-use sp_runtime::traits::{BlakeTwo256, Hash};
+use sp_runtime::{
+	traits::{BlakeTwo256, Hash},
+	SaturatedConversion, Saturating,
+};
 
 use crate::{
 	pallet,
@@ -40,7 +44,8 @@ where
 
 		// Construct file metadata.
 		let file_metadata = FileMetadata::<T> {
-			content_id: content_id.clone(),
+			requested_at: <frame_system::Pallet<T>>::block_number(),
+			fingerprint: content_id.clone(),
 			bsps: BoundedVec::default(),
 			is_public: true,
 		};
@@ -91,13 +96,19 @@ where
 		let threshold = T::AssignmentThreshold::decode(&mut &threshold[..])
 			.map_err(|_| Error::<T>::FailedToDecodeThreshold)?;
 
-		log::info!(
-			"Threshold: {:?}, MinBspsAssignmentThreshold: {:?}",
-			threshold,
-			T::MinBspsAssignmentThreshold::get()
-		);
+		let blocks_since_requested = <frame_system::Pallet<T>>::block_number()
+			.saturating_sub(file_metadata.requested_at)
+			.saturated_into::<u32>();
 
-		ensure!(threshold <= T::MinBspsAssignmentThreshold::get(), Error::<T>::ThresholdTooLow);
+		// Rate multiplier is 10,000.
+		// This can probably be exposed as a configurable parameter.
+		let rate_increase = blocks_since_requested
+			.saturating_mul(10_000u32)
+			.saturated_into::<T::AssignmentThreshold>();
+
+		let min_threshold = rate_increase.saturating_add(T::MinBspsAssignmentThreshold::get());
+
+		ensure!(threshold <= min_threshold, Error::<T>::ThresholdTooLow);
 
 		// Add BSP to storage request metadata.
 		file_metadata

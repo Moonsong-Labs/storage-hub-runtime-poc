@@ -1,12 +1,14 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::BoundedVec;
+use frame_system::pallet_prelude::BlockNumberFor;
 use scale_info::TypeInfo;
 
 ///
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo, Debug, PartialEq, Eq, Clone)]
 #[scale_info(skip_type_params(T))]
 pub struct FileMetadata<T: crate::Config> {
-	pub content_id: Fingerprint<T>,
+	pub requested_at: BlockNumberFor<T>,
+	pub fingerprint: Fingerprint<T>,
 	pub bsps: BoundedVec<StorageProviderId<T>, MaxBsps<T>>,
 	pub is_public: bool,
 }
