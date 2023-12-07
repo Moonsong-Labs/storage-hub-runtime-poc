@@ -97,8 +97,6 @@ where
 			T::MinBspsAssignmentThreshold::get()
 		);
 
-		let lol = T::MinBspsAssignmentThreshold::get();
-
 		ensure!(threshold <= T::MinBspsAssignmentThreshold::get(), Error::<T>::ThresholdTooLow);
 
 		// Add BSP to storage request metadata.
