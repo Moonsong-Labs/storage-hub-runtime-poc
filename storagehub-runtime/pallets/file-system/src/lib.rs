@@ -81,6 +81,7 @@ pub mod pallet {
 			+ AtLeast32Bit
 			+ Copy
 			+ MaxEncodedLen
+			+ Decode
 			+ HasCompact;
 
 		/// The maximum number of BSPs per file.
@@ -144,16 +145,17 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Trying to register a storage request for a file that is already registered.
 		StorageRequestAlreadyRegistered,
-
 		/// Trying to volunteer as BSP for a storage request, when sender is not a registered BSP.
 		NotBsp,
-
 		/// Trying to operate over a non-existing storage request.
 		StorageRequestNotRegistered,
-
 		/// Trying to volunteer a BSP for a storage request, when that BSP is already registered
 		/// for that storage request.
 		BspAlreadyRegistered,
+		/// Threshold value is not high enough to qualify as BSP for the storage request.
+		ThresholdTooLow,
+		/// Failed to decode the threshold value.
+		FailedToDecodeThreshold,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -202,7 +204,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			// Perform validations and register Storage Provider as BSP for file.
-			Self::do_bsp_volunteer(who.clone(), location.clone())?;
+			Self::do_bsp_volunteer(who.clone(), location.clone(), fingerprint)?;
 
 			// Emit new BSP volunteer event.
 			Self::deposit_event(Event::NewBspVolunteer {
