@@ -1,6 +1,5 @@
 use codec::{Decode, Encode};
 use frame_support::{ensure, pallet_prelude::DispatchResult, sp_runtime::BoundedVec, traits::Get};
-use frame_system::pallet_prelude::BlockNumberFor;
 use pallet_identity::IdentityInterface;
 use scale_info::prelude::vec::Vec;
 use sp_runtime::{
