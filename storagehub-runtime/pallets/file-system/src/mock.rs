@@ -53,13 +53,13 @@ impl pallet_file_system::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type BspsRegistry = Identity;
-	type ContentId = H256;
+	type Fingerprint = H256;
 	type StorageCount = u128;
 	type AssignmentThreshold = u128;
 	type MaxBsps = ConstU32<5u32>;
 	type MaxFilePathSize = ConstU32<512u32>;
 	type MaxMultiAddressSize = ConstU32<512u32>;
-	type MinBspsAssignmentThreshold = ConstU128<1_000u128>;
+	type MinBspsAssignmentThreshold = ConstU128<{ u128::MAX }>;
 }
 
 // Build genesis storage according to the mock runtime.

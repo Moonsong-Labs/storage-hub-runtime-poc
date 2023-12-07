@@ -38,7 +38,7 @@
 
     ```bash
     # MSP node
-    cargo run -- --secret-key-seed 1 --run-as msp-provider --chain local
+    cargo run -- --secret-key-seed 1 --run-as msp-provider --chain local --port 35435
     ```
 
     This will connect to the substrate node template via `subxt` (which utilizes `smoldot` in the background) and will subscribe to events being triggered by the substrate node.
@@ -58,7 +58,7 @@
     **User client**
 
     ```bash
-    cargo run -- --secret-key-seed 2 --run-as user
+    cargo run -- --secret-key-seed 2 --run-as user --port 44913
     ```
 
     This will wait for any file requests from any nodes (this will be improved to wait for specific nodes returned by the runtime) and send the file data.

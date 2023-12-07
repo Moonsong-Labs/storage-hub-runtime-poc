@@ -10,7 +10,7 @@
 services:
   storagehub:
     build:
-      context: ./storage-hub-runtime-poc
+      context: ./storagehub-runtime
     networks:
       - internet
     ports:

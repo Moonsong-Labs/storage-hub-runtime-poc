@@ -2,7 +2,7 @@ name: Check Set-Up & Build
 
 # Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
+  # Triggers the workflow on push or pull request events but only for the main branch
   push:
     branches: [main]
   pull_request:
@@ -26,6 +26,7 @@ jobs:
         run: sudo apt-get install -y clang libssl-dev llvm libudev-dev protobuf-compiler
 
       - name: Install Rust
+        working-directory: ./storagehub-runtime
         run: |
           rustup update stable --no-self-update
           rustup target add wasm32-unknown-unknown
@@ -34,10 +35,12 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Check Build
+        working-directory: ./storagehub-runtime
         run: |
           SKIP_WASM_BUILD=1 cargo check --release
 
       - name: Check Build for Benchmarking
-        run: >
+        working-directory: ./storagehub-runtime
+        run: |
           pushd node &&
           cargo check --features=runtime-benchmarks --release

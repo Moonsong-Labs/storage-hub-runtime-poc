@@ -1,164 +1,94 @@
-# Substrate Node Template
+# StorageHub - PoC
 
-A fresh [Substrate](https://substrate.io/) node, ready for hacking :rocket:
+This project showcases a proof of concept for a storage hub that can be used to store and retrieve files as a user from a storage provider.
 
-A standalone version of this template is available for each release of Polkadot in the [Substrate Developer Hub Parachain Template](https://github.com/substrate-developer-hub/substrate-parachain-template/) repository.
-The parachain template is generated directly at each Polkadot release branch from the [Node Template in Substrate](https://github.com/paritytech/substrate/tree/master/bin/node-template) upstream
+## Architecture and Basic Execution Flow
 
-It is usually best to use the stand-alone version to start a new project.
-All bugs, suggestions, and feature requests should be made upstream in the [Substrate](https://github.com/paritytech/substrate/tree/master/bin/node-template) repository.
+The following diagram shows the basic architecture of the system and the flow of a file storage request.
+
+![Alt text](./assets/architecture.png)
+
+1. StorageHub runtime registers the BSP node as a Backup Storage Provider.
+2. User node sends a transaction `request_storage` to the StorageHub runtime to store a file.
+3. StorageHub runtime deposits `NewRequestStorage` event.
+4. BSP node receives the event and sends a transaction to the StorageHub runtime to volunteer `bsp_volunteer` to store the file.
+5. BSP node attempts to establish connection with the User node and requests the file.
+6. User node sends the file to the BSP node.
 
 ## Getting Started
 
-Depending on your operating system and Rust version, there might be additional packages required to compile this template.
-Check the [Install](https://docs.substrate.io/install/) instructions for your platform for the most common dependencies.
-Alternatively, you can use one of the [alternative installation](#alternatives-installations) options.
+Everything can be run through docker compose by running the following command:
 
-### Build
-
-Use the following command to build the node without launching it:
-
-```sh
-cargo build --release
+```bash
+docker compose up -d
 ```
 
-### Embedded Docs
+This will start the following services:
 
-After you build the project, you can use the following command to explore its parameters and subcommands:
+- StorageHub runtime node
+- User node
+- Backup Storage Provider (BSP) node
 
-```sh
-./target/release/node-template -h
+    This will connect to the StorageHub runtime as a light client and start listening for file storage requests events and send transactions to volunteer to store files.
+
+    > Transactions are signed using Alice's keypair by default.
+
+## Try it out
+
+Before a BSP node can volunteer to store files, it needs to be registered with the StorageHub runtime. Since the BSP node signs transactions using Alice's keypair, we need to register Alice as a user.
+
+Execute the pallet Identity `registerUser` extrinsic in the [sudo](https://polkadot.js.org/apps/#/sudo) page.
+
+![Alt text](./assets/sudo-register-user.png)
+
+Next request to store a file by executing the pallet StorageHub `requestStorage` extrinsic in the [extrinsics](https://polkadot.js.org/apps/#/extrinsics) page.
+
+![Alt text](./assets/request-file.png)
+
+The important parameters to fill in is the:
+
+- `location`: The name of the file (this is considered to by the id of the file).
+- `senderMultiaddress`: The multiaddress of the User node. This is used by the BSP node to establish a connection with the User node to request the file.
+
+Now we can observe the following logs from the BSP node:
+
+```log
+2023-12-06 15:39:25 2023-12-06T20:39:25.924784Z  INFO libp2p_swarm: local_peer_id=12D3KooWPjceQrSwdWXPyLLeABRXmuqt69Rg3sBYbU1Nft9HyQ6X
+2023-12-06 15:39:25 2023-12-06T20:39:25.928845Z  INFO storagehub_client::client: Connected to Development network using ws://storagehub:9944 * Substrate node Substrate Node vRuntimeVersion { spec_version: 100, transaction_version: 1 }
+2023-12-06 15:39:25 2023-12-06T20:39:25.928917Z  INFO storagehub_client::runtimes::local: Subscribe 'NewStorageRequest' on-chain finalized event
+2023-12-06 15:39:26 2023-12-06T20:39:26.079171Z  INFO storagehub_client: Multiaddr listening on /ip4/127.0.0.1/tcp/23456/p2p/12D3KooWPjceQrSwdWXPyLLeABRXmuqt69Rg3sBYbU1Nft9HyQ6X
+2023-12-06 15:39:26 2023-12-06T20:39:26.079304Z  INFO storagehub_client: Multiaddr listening on /ip4/172.23.0.4/tcp/23456/p2p/12D3KooWPjceQrSwdWXPyLLeABRXmuqt69Rg3sBYbU1Nft9HyQ6X
+2023-12-06 16:44:55 2023-12-06T21:44:55.482623Z  INFO storagehub_client::runtimes::local: Received NewStorageRequest event - account_id: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY, peer: /ip4/172.23.0.3/tcp/34567/p2p/12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3, file_id: lorem, content_hash: 0x0000…0000, size: 0
+2023-12-06 16:45:12 2023-12-06T21:45:12.837356Z  INFO storagehub_client::runtimes::local: Successfully volunteered for file_id: lorem
+2023-12-06 16:45:12 2023-12-06T21:45:12.843654Z  INFO storagehub_client: Established new connection peer=12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3 endpoint=Dialer { address: "/ip4/172.23.0.3/tcp/34567/p2p/12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3", role_override: Dialer }
+2023-12-06 16:45:12 2023-12-06T21:45:12.939965Z  INFO storagehub_client: Identify sent to PeerId("12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3")
+2023-12-06 16:45:12 2023-12-06T21:45:12.940466Z  INFO storagehub_client: Identify received: Info { public_key: PublicKey { publickey: Ed25519(PublicKey(compressed): 6b79c57e6a95239282c4818e96112f3f3a401ba97a564c23852a3f1ea5fc) }, protocol_version: "/storagehub/0.1.0", agent_version: "rust-libp2p/0.44.0", listen_addrs: ["/ip4/172.23.0.3/tcp/34567", "/ip4/127.0.0.1/tcp/34567"], protocols: ["/ipfs/id/push/1.0.0", "/storagehub/0.1.0", "/ipfs/id/1.0.0"], observed_addr: "/ip4/172.23.0.4/tcp/50216" }
+2023-12-06 16:45:12 2023-12-06T21:45:12.940570Z  INFO storagehub_client: New external address candidate /ip4/172.23.0.4/tcp/23456
+2023-12-06 16:45:12 2023-12-06T21:45:12.992677Z  INFO storagehub_client::runtimes::local: Received file from peer PeerId("12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3")
+2023-12-06 16:45:12 2023-12-06T21:45:12.993700Z  INFO storagehub_client::runtimes::local: File downloaded to: /tmp/downloaded-files/lorem
+2023-12-06 16:45:12 2023-12-06T21:45:12.993726Z  INFO storagehub_client::runtimes::local: Waiting 3 seconds before run batch
+2023-12-06 16:45:12 Dialing 12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3
 ```
 
-You can generate and view the [Rust Docs](https://doc.rust-lang.org/cargo/commands/cargo-doc.html) for this template with this command:
+Notice the important logs are:
 
-```sh
-cargo +nightly doc --open
+- `Received NewStorageRequest event ...`: The BSP node has received the `NewStorageRequest` event from the StorageHub runtime and is ready to volunteer to store the file.
+
+- `Successfully volunteered for file_id: lorem`: The BSP node has successfully volunteered to store the file after executing the `bsp_volunteer` extrinsic.
+
+- `Received file from peer ...`: The BSP node has received the file from the User node.
+
+- `File downloaded to: /tmp/downloaded-files/lorem`: The file has been downloaded to the BSP node.
+
+## Updating the Runtime
+
+When updating the runtime, whether it is new types, extrinsic parameters, or events, the following command needs to be executed to generate the new metadata file that will be used by the User and BSP nodes.
+
+```bash
+# Generate the metadata file
+# Note: This command assumes that the StorageHub runtime is running on port 9944 and connects to localhost by default.
+subxt metadata -f bytes > local.scale
+
+# Copy the metadata file to the storagehub-client-node/metadata directory
+cp local.scale ./storagehub-client-node/metadata
 ```
-
-### Single-Node Development Chain
-
-The following command starts a single-node development chain that doesn't persist state:
-
-```sh
-./target/release/node-template --dev
-```
-
-To purge the development chain's state, run the following command:
-
-```sh
-./target/release/node-template purge-chain --dev
-```
-
-To start the development chain with detailed logging, run the following command:
-
-```sh
-RUST_BACKTRACE=1 ./target/release/node-template -ldebug --dev
-```
-
-Development chains:
-
-- Maintain state in a `tmp` folder while the node is running.
-- Use the **Alice** and **Bob** accounts as default validator authorities.
-- Use the **Alice** account as the default `sudo` account.
-- Are preconfigured with a genesis state (`/node/src/chain_spec.rs`) that includes several prefunded development accounts.
-
-
-To persist chain state between runs, specify a base path by running a command similar to the following:
-
-```sh
-// Create a folder to use as the db base path
-$ mkdir my-chain-state
-
-// Use of that folder to store the chain state
-$ ./target/release/node-template --dev --base-path ./my-chain-state/
-
-// Check the folder structure created inside the base path after running the chain
-$ ls ./my-chain-state
-chains
-$ ls ./my-chain-state/chains/
-dev
-$ ls ./my-chain-state/chains/dev
-db keystore network
-```
-
-### Connect with Polkadot-JS Apps Front-End
-
-After you start the node template locally, you can interact with it using the hosted version of the [Polkadot/Substrate Portal](https://polkadot.js.org/apps/#/explorer?rpc=ws://localhost:9944) front-end by connecting to the local node endpoint.
-A hosted version is also available on [IPFS (redirect) here](https://dotapps.io/) or [IPNS (direct) here](ipns://dotapps.io/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer).
-You can also find the source code and instructions for hosting your own instance on the [polkadot-js/apps](https://github.com/polkadot-js/apps) repository.
-
-### Multi-Node Local Testnet
-
-If you want to see the multi-node consensus algorithm in action, see [Simulate a network](https://docs.substrate.io/tutorials/build-a-blockchain/simulate-network/).
-
-## Template Structure
-
-A Substrate project such as this consists of a number of components that are spread across a few directories.
-
-### Node
-
-A blockchain node is an application that allows users to participate in a blockchain network.
-Substrate-based blockchain nodes expose a number of capabilities:
-
-- Networking: Substrate nodes use the [`libp2p`](https://libp2p.io/) networking stack to allow the
-  nodes in the network to communicate with one another.
-- Consensus: Blockchains must have a way to come to [consensus](https://docs.substrate.io/fundamentals/consensus/) on the state of the network.
-  Substrate makes it possible to supply custom consensus engines and also ships with several consensus mechanisms that have been built on top of [Web3 Foundation research](https://research.web3.foundation/en/latest/polkadot/NPoS/index.html).
-- RPC Server: A remote procedure call (RPC) server is used to interact with Substrate nodes.
-
-There are several files in the `node` directory.
-Take special note of the following:
-
-- [`chain_spec.rs`](./node/src/chain_spec.rs): A [chain specification](https://docs.substrate.io/build/chain-spec/) is a source code file that defines a Substrate chain's initial (genesis) state.
-  Chain specifications are useful for development and testing, and critical when architecting the launch of a production chain.
-  Take note of the `development_config` and `testnet_genesis` functions,.
-  These functions are used to define the genesis state for the local development chain configuration.
-  These functions identify some [well-known accounts](https://docs.substrate.io/reference/command-line-tools/subkey/) and use them to configure the blockchain's initial state.
-- [`service.rs`](./node/src/service.rs): This file defines the node implementation.
-  Take note of the libraries that this file imports and the names of the functions it invokes.
-  In particular, there are references to consensus-related topics, such as the [block finalization and forks](https://docs.substrate.io/fundamentals/consensus/#finalization-and-forks) and other [consensus mechanisms](https://docs.substrate.io/fundamentals/consensus/#default-consensus-models) such as Aura for block authoring and GRANDPA for finality.
-
-
-
-### Runtime
-
-In Substrate, the terms "runtime" and "state transition function" are analogous.
-Both terms refer to the core logic of the blockchain that is responsible for validating blocks and executing the state changes they define.
-The Substrate project in this repository uses [FRAME](https://docs.substrate.io/learn/runtime-development/#frame) to construct a blockchain runtime.
-FRAME allows runtime developers to declare domain-specific logic in modules called "pallets".
-At the heart of FRAME is a helpful [macro language](https://docs.substrate.io/reference/frame-macros/) that makes it easy to create pallets and flexibly compose them to create blockchains that can address [a variety of needs](https://substrate.io/ecosystem/projects/).
-
-Review the [FRAME runtime implementation](./runtime/src/lib.rs) included in this template and note the following:
-
-- This file configures several pallets to include in the runtime.
-  Each pallet configuration is defined by a code block that begins with `impl $PALLET_NAME::Config for Runtime`.
-- The pallets are composed into a single runtime by way of the [`construct_runtime!`](https://paritytech.github.io/substrate/master/frame_support/macro.construct_runtime.html) macro, which is part of the [core FRAME pallet library](https://docs.substrate.io/reference/frame-pallets/#system-pallets).
-
-### Pallets
-
-The runtime in this project is constructed using many FRAME pallets that ship with [the Substrate repository](https://github.com/paritytech/substrate/tree/master/frame) and a template pallet that is [defined in the `pallets`](./pallets/template/src/lib.rs) directory.
-
-A FRAME pallet is comprised of a number of blockchain primitives, including:
-
-- Storage: FRAME defines a rich set of powerful [storage abstractions](https://docs.substrate.io/build/runtime-storage/) that makes it easy to use Substrate's efficient key-value database to manage the evolving state of a blockchain.
-- Dispatchables: FRAME pallets define special types of functions that can be invoked (dispatched) from outside of the runtime in order to update its state.
-- Events: Substrate uses [events](https://docs.substrate.io/build/events-and-errors/) to notify users of significant state changes.
-- Errors: When a dispatchable fails, it returns an error.
-
-Each pallet has its own `Config` trait which serves as a configuration interface to generically define the types and parameters it depends on.
-
-## Alternatives Installations
-
-Instead of installing dependencies and building this source directly, consider the following alternatives.
-
-### Nix
-
-Install [nix](https://nixos.org/) and
-[nix-direnv](https://github.com/nix-community/nix-direnv) for a fully plug-and-play
-experience for setting up the development environment.
-To get all the correct dependencies, activate direnv `direnv allow`.
-
-### Docker
-
-Please follow the [Substrate Docker instructions here](https://github.com/paritytech/substrate/blob/master/docker/README.md) to build the Docker container with the Substrate Node Template binary.

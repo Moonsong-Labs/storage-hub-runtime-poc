@@ -1,9 +1,12 @@
+use codec::{Decode, Encode};
 use frame_support::{ensure, pallet_prelude::DispatchResult, sp_runtime::BoundedVec, traits::Get};
 use pallet_identity::IdentityInterface;
+use scale_info::prelude::vec::Vec;
+use sp_runtime::traits::{BlakeTwo256, Hash};
 
 use crate::{
 	pallet,
-	types::{ContentId, FileLocation, FileMetadata},
+	types::{FileLocation, FileMetadata, Fingerprint},
 	Config, Error, FilesMapping, Pallet, StorageRequests,
 };
 
@@ -30,7 +33,7 @@ where
 {
 	pub fn do_request_storage(
 		location: FileLocation<T>,
-		content_id: ContentId<T>,
+		content_id: Fingerprint<T>,
 	) -> DispatchResult {
 		// TODO: Perform various checks of users funds, storage capacity, etc.
 		// TODO: Not relevant for PoC.
@@ -54,7 +57,11 @@ where
 		Ok(())
 	}
 
-	pub fn do_bsp_volunteer(who: T::AccountId, location: FileLocation<T>) -> DispatchResult {
+	pub fn do_bsp_volunteer(
+		who: T::AccountId,
+		location: FileLocation<T>,
+		fingerprint: Fingerprint<T>,
+	) -> DispatchResult {
 		// TODO: Perform various checks of BSP staking, total capacity, etc.
 		// TODO: Not relevant for PoC.
 
@@ -77,7 +84,20 @@ where
 		// Check that BSP is not already registered for this storage request.
 		ensure!(!file_metadata.bsps.contains(&who), Error::<T>::BspAlreadyRegistered);
 
-		// TODO: Check if BSP qualifies for volunteering based on randomness criteria.
+		// Check that the threshold value is high enough to qualify as BSP for the storage request.
+		let who_bytes = BlakeTwo256::hash(&who.encode()).0;
+		let threshold = calculate_xor(fingerprint.as_ref().try_into().unwrap(), &who_bytes);
+
+		let threshold = T::AssignmentThreshold::decode(&mut &threshold[..])
+			.map_err(|_| Error::<T>::FailedToDecodeThreshold)?;
+
+		log::info!(
+			"Threshold: {:?}, MinBspsAssignmentThreshold: {:?}",
+			threshold,
+			T::MinBspsAssignmentThreshold::get()
+		);
+
+		ensure!(threshold <= T::MinBspsAssignmentThreshold::get(), Error::<T>::ThresholdTooLow);
 
 		// Add BSP to storage request metadata.
 		file_metadata
@@ -100,4 +120,13 @@ where
 
 		Ok(())
 	}
+}
+
+fn calculate_xor(fingerprint: &[u8; 32], bsp: &[u8; 32]) -> Vec<u8> {
+	let mut xor_result = Vec::with_capacity(32);
+	for i in 0..32 {
+		xor_result.push(fingerprint[i] ^ bsp[i]);
+	}
+
+	xor_result
 }

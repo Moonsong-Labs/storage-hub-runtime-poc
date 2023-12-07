@@ -30,7 +30,7 @@ fn request_storage_success() {
 			Event::NewStorageRequest {
 				who: 1,
 				location,
-				content_id,
+				fingerprint: content_id,
 				size: 4,
 				sender_multiaddress: BoundedVec::try_from(vec![1]).unwrap(),
 			}
@@ -49,7 +49,7 @@ fn bsp_volunteer_success() {
 		let bsp = RuntimeOrigin::signed(2);
 		let location = FileLocation::<Test>::try_from(b"test".to_vec()).unwrap();
 		let file_content = b"test".to_vec();
-		let content_id = BlakeTwo256::hash(&file_content);
+		let fingerprint = BlakeTwo256::hash(&file_content);
 
 		// Register BSP in Identity Pallet.
 		assert_ok!(Identity::register_user(RuntimeOrigin::root(), 2));
@@ -58,7 +58,7 @@ fn bsp_volunteer_success() {
 		assert_ok!(FileSystem::request_storage(
 			user.clone(),
 			location.clone(),
-			content_id.clone(),
+			fingerprint.clone(),
 			4,
 			BoundedVec::try_from(vec![1]).unwrap(),
 		));
@@ -67,7 +67,7 @@ fn bsp_volunteer_success() {
 		assert_ok!(FileSystem::bsp_volunteer(
 			bsp.clone(),
 			location.clone(),
-			content_id.clone(),
+			fingerprint.clone(),
 			BoundedVec::try_from(vec![2]).unwrap()
 		));
 
@@ -76,7 +76,7 @@ fn bsp_volunteer_success() {
 			Event::NewBspVolunteer {
 				who: 2,
 				location,
-				content_id,
+				fingerprint,
 				bsp_multiaddress: BoundedVec::try_from(vec![2]).unwrap(),
 			}
 			.into(),
