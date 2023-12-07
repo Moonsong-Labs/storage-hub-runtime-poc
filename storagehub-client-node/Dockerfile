@@ -33,8 +33,6 @@ cargo +nightly build --release
 cp ./target/release/$APP_NAME /bin/server
 EOF
 
-COPY ./lorem /app/lorem
-
 ################################################################################
 # Create a new stage for running the application that contains the minimal
 # runtime dependencies for the application. This often uses a different base
@@ -65,13 +63,7 @@ USER appuser
 
 COPY --from=build /bin/server /bin/
 
-RUN mkdir -p /tmp/files-to-upload; \
-    mkdir -p /tmp/downloaded-files;
-
-COPY --from=build /app/lorem /tmp/files-to-upload
-
-RUN chmod -R 777 /tmp/files-to-upload; \
-    chmod -R 777 /tmp/downloaded-files;
+COPY ./files-to-upload /tmp/files-to-upload
 
 # What the container should run when it is started.
 ENTRYPOINT ["/bin/server"]
