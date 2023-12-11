@@ -1,6 +1,9 @@
 use std::{collections::HashMap, thread, time};
 
-use crate::network::{self};
+use crate::{
+    config::DevAccounts,
+    network::{self},
+};
 use sp_core::crypto;
 use subxt::{backend::rpc::RpcClient, rpc_params, Error, OnlineClient, PolkadotConfig};
 use tracing::{error, info, warn};
@@ -16,6 +19,7 @@ use crate::{
 
 pub(crate) struct StorageHub {
     pub(crate) file_download_path: String,
+    pub(crate) account: DevAccounts,
     pub(crate) runtime: SupportedRuntime,
     pub(crate) rpc_client: RpcClient,
     pub(crate) network_client: network::Client,
@@ -69,6 +73,7 @@ impl StorageHub {
         );
         StorageHub {
             file_download_path: config.download_path.clone(),
+            account: config.dev_account.clone(),
             runtime: SupportedRuntime::Local,
             rpc_client,
             network_client,
@@ -78,14 +83,14 @@ impl StorageHub {
     pub(crate) async fn run(config: LightClientOptions, network_client: network::Client) {
         match config.run_as {
             Role::User => Self::_run_as_user().await,
-            Role::MspProvider => Self::run_as_msp_provider(config, network_client).await,
-            Role::BspProvider => Self::_run_as_bsp_provider().await,
+            Role::BspProvider => Self::run_as_bsp_provider(config, network_client).await,
+            Role::MspProvider => Self::_run_as_msp_provider().await,
         }
     }
 
     async fn _run_as_user() {}
 
-    async fn run_as_msp_provider(config: LightClientOptions, network_client: network::Client) {
+    async fn run_as_bsp_provider(config: LightClientOptions, network_client: network::Client) {
         let mut n = 1_u32;
         loop {
             let mut msp = StorageHub::new(&config, network_client.clone()).await;
@@ -106,8 +111,8 @@ impl StorageHub {
         }
     }
 
-    async fn _run_as_bsp_provider() {
-        unimplemented!("BSP provider execution not implemented.")
+    async fn _run_as_msp_provider() {
+        unimplemented!("MSP provider execution not implemented.")
     }
 
     async fn run_and_subscribe_to_events(&mut self) -> Result<(), StorageHubError> {

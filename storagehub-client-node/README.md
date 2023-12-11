@@ -10,12 +10,12 @@
   - [x] Send extrinsics
   - [x] BSP node dispatches `bsp_volunteer` extrinsic prior to sending file request
 - [ ] `libp2p` (peer-to-peer networking)
-  - [x] MSP node sends file request
-  - [ ] User validates MSP node is registered on chain
-  - [x] Establish connection between User and MSP node
+  - [x] BSP node sends file request
+  - [ ] User validates BSP node is registered on chain
+  - [x] Establish connection between User and BSP node
   - [x] Send file data
   - [x] Receive file data
-  - [ ] MSP/BSP node validates data against `content_hash`
+  - [ ] BSP/BSP node validates data against `content_hash`
 
 ## How to run without Docker compose
 
@@ -30,15 +30,15 @@ cargo build --release
 ./target/release/node-template --dev
 ```
 
-### Run MSP node
+### Run BSP node
 
 ```bash
-cargo run -- --secret-key-seed 1 --run-as msp-provider --chain local --port 35435 --download-path "/tmp/downloaded-files"
+cargo run -- --secret-key-seed 1 --run-as bsp-provider --chain local --port 35435 --download-path "/tmp/downloaded-files"
 ```
 
 This will connect to the substrate node template via `subxt` (which utilizes `smoldot` in the background) and will subscribe to events being triggered by the substrate node.
 
-It will specifically listen to the `RequestStore` event which contains all the information required for the MSP node to send a file request to the user's peer address which should contain the file.
+It will specifically listen to the `RequestStore` event which contains all the information required for the BSP node to send a file request to the user's peer address which should contain the file.
 
 Output (truncated):
 
@@ -53,7 +53,7 @@ INFO main_sp::runtimes::local: Subscribe 'RequestStore' on-chain finalized event
 ### Run User node
 
 ```bash
-cargo run -- --secret-key-seed 2 --run-as user --port 44913 --upload-path "/tmp/files-to-upload"
+cargo run -- --secret-key-seed 2 --run-as user --port 44913 --upload-path "./files-to-upload"
 ```
 
 This will wait for any file requests from any nodes (this will be improved to wait for specific nodes returned by the runtime) and send the file data.

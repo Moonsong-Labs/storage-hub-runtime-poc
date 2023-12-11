@@ -26,7 +26,27 @@ services:
       interval: 3s
       timeout: 10s
       retries: 5
-  msp:
+  user:
+    depends_on:
+      storagehub:
+        condition: service_healthy
+    networks:
+      - internet
+    build:
+      context: ./storagehub-client-node
+      target: final
+    ports:
+      - "34565:34565"
+    command:
+      - "--secret-key-seed"
+      - "1"
+      - "--run-as"
+      - "user"
+      - "--port"
+      - "34565"
+      - "--upload-path"
+      - "/tmp/files-to-upload"
+  bsp:
     depends_on:
       storagehub:
         condition: service_healthy
@@ -39,35 +59,17 @@ services:
       - "23456:23456"
     command:
       - "--secret-key-seed"
-      - "1"
+      - "2"
       - "--run-as"
-      - "msp-provider"
+      - "bsp-provider"
       - "--chain"
       - "compose"
+      - "--dev-account"
+      - "alice"
       - "--port"
       - "23456"
       - "--download-path"
       - "/tmp/downloaded-files"
-  user:
-    depends_on:
-      storagehub:
-        condition: service_healthy
-    networks:
-      - internet
-    build:
-      context: ./storagehub-client-node
-      target: final
-    ports:
-      - "34567:34567"
-    command:
-      - "--secret-key-seed"
-      - "2"
-      - "--run-as"
-      - "user"
-      - "--port"
-      - "34567"
-      - "--upload-path"
-      - "/tmp/files-to-upload"
 
 networks:
   network-a:

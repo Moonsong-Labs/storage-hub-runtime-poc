@@ -28,8 +28,8 @@ pub mod runtimes;
 // We create a custom network behaviour that combines Kademlia, request_response and identify.
 #[derive(NetworkBehaviour)]
 struct Behaviour {
-    request_response: request_response::cbor::Behaviour<FileRequest, FileResponse>,
     identify: identify::Behaviour,
+    request_response: request_response::cbor::Behaviour<FileRequest, FileResponse>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -1,6 +1,15 @@
 # StorageHub - PoC
 
-This project showcases a proof of concept for a storage hub that can be used to store and retrieve files as a user from a storage provider.
+## Overview
+
+This proof of concept demonstrates the core functionality of the StorageHub system. The system allows users to store files on a decentralized network of backup storage providers (BSPs).
+
+**What is included:**
+
+- StorageHub runtime
+- StorageHub client node
+    1. User node
+    2. Backup Storage Provider (BSP) node
 
 ## Architecture and Basic Execution Flow
 

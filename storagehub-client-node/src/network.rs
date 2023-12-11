@@ -10,10 +10,16 @@ use libp2p::{
     request_response::{self, ProtocolSupport, ResponseChannel},
     tcp, yamux, Multiaddr, PeerId, StreamProtocol,
 };
-use tracing::info;
+use tracing::{error, info};
 use tracing_subscriber::EnvFilter;
 
 use crate::{Behaviour, EventLoop, FileResponse};
+
+/// Defines max_negotiating_inbound_streams constant for the swarm.
+/// It must be set for large plots.
+const SWARM_MAX_NEGOTIATING_INBOUND_STREAMS: usize = 100000;
+/// How long will connection be allowed to be open without any usage
+const IDLE_CONNECTION_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Create a new Swarm network
 pub(crate) async fn new(
@@ -43,6 +49,10 @@ pub(crate) async fn new(
         )?
         .with_behaviour(|key| {
             Ok(Behaviour {
+                identify: identify::Behaviour::new(identify::Config::new(
+                    "/storagehub/0.1.0".to_string(),
+                    key.public(),
+                )),
                 request_response: request_response::cbor::Behaviour::new(
                     [(
                         StreamProtocol::new("/storagehub/0.1.0"),
@@ -50,13 +60,13 @@ pub(crate) async fn new(
                     )],
                     request_response::Config::default(),
                 ),
-                identify: identify::Behaviour::new(identify::Config::new(
-                    "/storagehub/0.1.0".to_string(),
-                    key.public(),
-                )),
             })
         })?
-        .with_swarm_config(|c| c.with_idle_connection_timeout(Duration::from_secs(60)))
+        .with_swarm_config(|config| {
+            config
+                .with_max_negotiating_inbound_streams(SWARM_MAX_NEGOTIATING_INBOUND_STREAMS)
+                .with_idle_connection_timeout(IDLE_CONNECTION_TIMEOUT)
+        })
         .build();
 
     swarm.listen_on(format!("/ip4/0.0.0.0/tcp/{}", port).parse()?)?;
@@ -91,7 +101,7 @@ impl Client {
             match network_events.next().await {
                 // Reply with the content of the file on incoming requests.
                 Some(Event::InboundRequest { file_id, channel }) => {
-                    tracing::info!(file_id = ?file_id, "InboundRequest network event");
+                    info!(file_id = ?file_id, "InboundRequest network event");
                     self.respond_file(
                         std::fs::read(format!("{}/{}", self.upload_path, file_id)).unwrap(),
                         channel,
@@ -105,7 +115,10 @@ impl Client {
                     addr,
                     file_id,
                 }) => {
-                    tracing::info!("Sending request for file readme to peer {:?}", peer);
+                    info!(
+                        "Sending request for file {} readme to peer {:?}",
+                        file_id, peer
+                    );
 
                     match self.request_file(peer, addr.clone(), file_id).await {
                         Ok(file) => {
@@ -115,7 +128,7 @@ impl Client {
                                 .expect("Stdout to be open.");
                         }
                         Err(e) => {
-                            eprintln!("Failed to request file: {:?}", e);
+                            error!("Failed to receive file from peer {:?}: {:?}", peer, e)
                         }
                     }
 

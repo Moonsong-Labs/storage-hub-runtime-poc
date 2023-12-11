@@ -11,6 +11,7 @@ use subxt::ext::sp_core::{sr25519::Pair, Pair as PairT};
 use subxt::{tx::PairSigner, utils::AccountId32};
 use tracing::{debug, error, info};
 
+use crate::config::DevAccounts;
 use crate::{client::StorageHub, errors::StorageHubError};
 
 pub(crate) async fn run_and_subscribe_to_events(
@@ -64,7 +65,15 @@ pub(crate) async fn run_and_subscribe_to_events(
                 peer,
             );
 
-            let owner: Pair = Pair::from_string("//Alice", None).expect("cannot create keypair");
+            let account = match storage_hub.account {
+                DevAccounts::Alice => "//Alice",
+                DevAccounts::Bob => "//Bob",
+                DevAccounts::Charlie => "//Charlie",
+                DevAccounts::Dave => "//Dave",
+            };
+            let owner: Pair =
+                Pair::from_string(account, None).expect("Failed to create pair from string");
+
             let signer = PairSigner::new(owner);
             let _ = api
                 .tx()
