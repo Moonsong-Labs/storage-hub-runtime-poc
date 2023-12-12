@@ -2,7 +2,7 @@ use clap::{Args, Parser};
 
 use crate::{
 	lightclient::{client::DevAccounts, support::SupportedRuntime},
-	swarming, Role,
+	p2p, Role,
 };
 
 #[derive(Parser, Debug)]
@@ -34,7 +34,7 @@ pub(crate) struct Options {
 #[derive(Args, Debug)]
 pub(crate) struct Libp2pOptions {
 	#[clap(long)]
-	pub(crate) port: swarming::service::Port,
+	pub(crate) port: p2p::service::Port,
 }
 
 #[derive(Args, Debug, Clone)]

@@ -1,7 +1,6 @@
 use anyhow::Error;
 use libp2p::{Multiaddr, PeerId};
 use tokio::sync::{mpsc::UnboundedSender, oneshot};
-use tracing::info;
 
 use super::service::{FileRequest, Service};
 
@@ -48,7 +47,7 @@ impl Service {
 			NetworkCommand::RequestFile { file_id, peer_id, multiaddr, channel } => {
 				let swarm = self.swarm.behaviour_mut();
 
-				/// TODO remove this and add address from the `IdentifyEvent::Received` event.
+				// TODO remove this and add address from the `IdentifyEvent::Received` event.
 				swarm.request_response.add_address(&peer_id, multiaddr);
 				let request_id =
 					swarm.request_response.send_request(&peer_id, FileRequest(file_id));

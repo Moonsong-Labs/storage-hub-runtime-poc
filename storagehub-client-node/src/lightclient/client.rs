@@ -5,7 +5,7 @@ use sp_core::crypto;
 use subxt::{backend::rpc::RpcClient, rpc_params, Error, OnlineClient, PolkadotConfig};
 use tracing::{error, info, warn};
 
-use crate::{lightclient::support::ChainPrefix, options, swarming, Role};
+use crate::{lightclient::support::ChainPrefix, options, p2p, Role};
 
 use super::{errors::StorageHubError, local, support::SupportedRuntime};
 
@@ -30,7 +30,7 @@ pub(crate) struct Client {
 	/// The RPC client.
 	pub(crate) rpc_client: RpcClient,
 	/// The mpsc channel to send commands to the swarm.
-	pub(crate) command_sender: swarming::service::CommandSender,
+	pub(crate) command_sender: p2p::service::CommandSender,
 	/// The path where the files are downloaded.
 	pub(crate) download_path: String,
 }
@@ -40,7 +40,7 @@ impl Client {
 	pub(crate) async fn run(
 		run_as: Role,
 		config: options::LightClientOptions,
-		command_sender: swarming::service::CommandSender,
+		command_sender: p2p::service::CommandSender,
 		download_path: String,
 	) {
 		match run_as {
@@ -54,7 +54,7 @@ impl Client {
 	/// Create a new light client.
 	pub(crate) async fn new(
 		config: &options::LightClientOptions,
-		command_sender: swarming::service::CommandSender,
+		command_sender: p2p::service::CommandSender,
 		download_path: String,
 	) -> Self {
 		let ws_address = config.ws_address.clone().unwrap_or(config.chain.ws_address());
@@ -115,7 +115,7 @@ impl Client {
 
 	async fn run_as_bsp_provider(
 		config: options::LightClientOptions,
-		command_sender: swarming::service::CommandSender,
+		command_sender: p2p::service::CommandSender,
 		download_path: String,
 	) {
 		let mut n = 1_u32;

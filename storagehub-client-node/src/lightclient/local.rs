@@ -15,7 +15,7 @@ use subxt::{
 use tokio::sync::oneshot;
 use tracing::{debug, error, info};
 
-use crate::{lightclient::client::DevAccounts, swarming};
+use crate::{lightclient::client::DevAccounts, p2p};
 
 use super::{client::Client, errors::StorageHubError};
 
@@ -62,7 +62,7 @@ pub(crate) async fn run(storage_hub: &mut Client) -> Result<(), StorageHubError>
 
 			storage_hub
 				.command_sender
-				.send(swarming::commands::NetworkCommand::Multiaddresses { channel: sender })
+				.send(p2p::commands::NetworkCommand::Multiaddresses { channel: sender })
 				.expect("Failed to send get multiaddresses command");
 			let multiaddresses = receiver.await.expect("Failed to receive multiaddresses");
 
@@ -118,7 +118,7 @@ pub(crate) async fn run(storage_hub: &mut Client) -> Result<(), StorageHubError>
 
 			storage_hub
 				.command_sender
-				.send(swarming::commands::NetworkCommand::ExternalDial {
+				.send(p2p::commands::NetworkCommand::ExternalDial {
 					multiaddr: sender_multiaddr.clone(),
 					channel: sender,
 				})
@@ -129,7 +129,7 @@ pub(crate) async fn run(storage_hub: &mut Client) -> Result<(), StorageHubError>
 
 			storage_hub
 				.command_sender
-				.send(swarming::commands::NetworkCommand::RequestFile {
+				.send(p2p::commands::NetworkCommand::RequestFile {
 					file_id: file_id.clone(),
 					peer_id: sender_peer_id,
 					multiaddr: sender_multiaddr,

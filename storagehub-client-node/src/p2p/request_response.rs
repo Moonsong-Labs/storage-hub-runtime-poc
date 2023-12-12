@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use libp2p::request_response::{Event as RequestResponseEvent, Message};
 use tracing::{debug, error, warn};
 
-use crate::swarming::service::FileResponse;
+use crate::p2p::service::FileResponse;
 
 use super::service::{FileRequest, Service};
 

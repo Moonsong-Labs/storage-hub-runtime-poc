@@ -1,7 +1,7 @@
 use libp2p::identify::Event as IdentifyEvent;
 use tracing::debug;
 
-use crate::swarming::service::REQUEST_RESPONSE_PROTOCOL_NAME;
+use crate::p2p::service::REQUEST_RESPONSE_PROTOCOL_NAME;
 
 use super::service::Service;
 

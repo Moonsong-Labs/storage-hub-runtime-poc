@@ -1,8 +1,7 @@
 use crate::Role;
 use anyhow::{anyhow, Result};
 use libp2p::{
-	futures::StreamExt, request_response::OutboundRequestId, swarm::NetworkBehaviour, Multiaddr,
-	Swarm,
+	futures::StreamExt, request_response::OutboundRequestId, swarm::NetworkBehaviour, Swarm,
 };
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error::Error, time::Duration};

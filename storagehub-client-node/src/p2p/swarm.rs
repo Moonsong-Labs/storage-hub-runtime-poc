@@ -1,4 +1,4 @@
-use crate::swarming::service::BehaviourEvent;
+use crate::p2p::service::BehaviourEvent;
 use libp2p::swarm::SwarmEvent;
 use tracing::debug;
 

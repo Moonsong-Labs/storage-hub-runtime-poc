@@ -6,7 +6,7 @@ use tracing_subscriber::EnvFilter;
 
 mod lightclient;
 mod options;
-mod swarming;
+mod p2p;
 
 #[derive(ValueEnum, Clone, Debug)]
 pub enum Role {
@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
 	let opts: Options = Options::parse();
 
-	let service = swarming::service::Service::new(
+	let service = p2p::service::Service::new(
 		opts.run_as.clone(),
 		opts.libp2p_options.port,
 		opts.upload_path,
