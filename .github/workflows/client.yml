@@ -1,4 +1,4 @@
-name: Check Set-Up & Build
+name: StorageHub Client Node CI
 
 # Controls when the action will run.
 on:
