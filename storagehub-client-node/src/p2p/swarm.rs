@@ -1,6 +1,6 @@
 use crate::p2p::service::BehaviourEvent;
 use libp2p::swarm::SwarmEvent;
-use tracing::debug;
+use tracing::{debug, info};
 
 use super::service::Service;
 
@@ -8,7 +8,7 @@ impl Service {
 	pub(crate) async fn handle_swarm_event(&mut self, event: SwarmEvent<BehaviourEvent>) {
 		match event {
 			SwarmEvent::NewListenAddr { address, .. } => {
-				debug!(
+				info!(
 					"[SwarmEvent::NewListenAddr] - listen address: {}/p2p/{}",
 					address,
 					self.swarm.local_peer_id()

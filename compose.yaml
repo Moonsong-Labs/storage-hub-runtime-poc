@@ -38,7 +38,7 @@ services:
     ports:
       - "34565:34565"
     environment:
-      - RUST_LOG=debug
+      - RUST_LOG=info
     command:
       - "--run-as"
       - "user"
@@ -58,7 +58,7 @@ services:
     ports:
       - "23456:23456"
     environment:
-      - RUST_LOG=debug
+      - RUST_LOG=info
     command:
       - "--run-as"
       - "bsp-provider"
@@ -82,7 +82,7 @@ services:
     ports:
       - "23457:23457"
     environment:
-      - RUST_LOG=debug
+      - RUST_LOG=info
     command:
       - "--run-as"
       - "bsp-provider"
@@ -92,6 +92,30 @@ services:
       - "bob"
       - "--port"
       - "23457"
+      - "--download-path"
+      - "/tmp/downloaded-files"
+  bsp-3:
+    depends_on:
+      storagehub:
+        condition: service_healthy
+    networks:
+      - internet
+    build:
+      context: ./storagehub-client-node
+      target: final
+    ports:
+      - "23458:23458"
+    environment:
+      - RUST_LOG=info
+    command:
+      - "--run-as"
+      - "bsp-provider"
+      - "--chain"
+      - "compose"
+      - "--dev-account"
+      - "charlie"
+      - "--port"
+      - "23458"
       - "--download-path"
       - "/tmp/downloaded-files"  
 

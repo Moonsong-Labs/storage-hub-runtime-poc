@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use libp2p::request_response::{Event as RequestResponseEvent, Message};
-use tracing::{debug, error, warn};
+use tracing::{debug, error, info, warn};
 
 use crate::p2p::service::FileResponse;
 
@@ -37,6 +37,11 @@ impl Service {
 					{
 						error!("[BehaviourEvent::RequestMessage] failed to send response")
 					}
+
+					info!(
+						"[RequestResponseEvent::Message::Request] - sending FileResponse to peer {}.",
+						peer
+					);
 				},
 				Message::Response { request_id, response } => {
 					debug!(
@@ -49,6 +54,11 @@ impl Service {
 						if request.send(Ok(response.0)).is_err() {
 							warn!("[RequestResponseMessage::Response] - failed to send request: {request_id:?}");
 						}
+
+						info!(
+							"[RequestResponseEvent::Message::Response] - received FileResponse from peer {}.",
+							peer
+						);
 					}
 				},
 			},

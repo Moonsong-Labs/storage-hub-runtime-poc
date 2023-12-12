@@ -140,7 +140,7 @@ pub(crate) async fn run(storage_hub: &mut Client) -> Result<(), StorageHubError>
 
 			match maybe_file {
 				Ok(file) => {
-					tracing::info!("Received file from peer {:?}", sender_peer_id);
+					info!("Received file from peer {:?}", sender_peer_id);
 
 					let file_path = format!("{}/{}", storage_hub.download_path, file_id);
 
