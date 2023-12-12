@@ -20,9 +20,9 @@ The following diagram shows the basic architecture of the system and the flow of
 1. StorageHub runtime registers the BSP node as a Backup Storage Provider.
 2. User node sends a transaction `request_storage` to the StorageHub runtime to store a file.
 3. StorageHub runtime deposits `NewRequestStorage` event.
-4. BSP node receives the event and sends a transaction to the StorageHub runtime to volunteer `bsp_volunteer` to store the file.
-5. BSP node attempts to establish connection with the User node and requests the file.
-6. User node sends the file to the BSP node.
+4. BSP nodes receives the event and sends a transaction to the StorageHub runtime to volunteer `bsp_volunteer` to store the file.
+5. BSP nodes attempt to establish connection with the User node and requests the file.
+6. User node sends the file to the BSP nodes.
 
 ## Getting Started
 

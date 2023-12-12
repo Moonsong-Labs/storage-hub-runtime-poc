@@ -9,12 +9,15 @@
   - [x] Subscribe to events
   - [x] Send extrinsics
   - [x] BSP node dispatches `bsp_volunteer` extrinsic prior to sending file request
+  - [ ] Receive and queue multiple `NewStorageRequest`s events (right now it only can process one at a time)
 - [ ] `libp2p` (peer-to-peer networking)
   - [x] BSP node sends file request
   - [ ] User validates BSP node is registered on chain
   - [x] Establish connection between User and BSP node
+  - [ ] Add external address using `Identify` Behaviour (right now it only adds the address in the request_response `FileRequest` event)
   - [x] Send file data
   - [x] Receive file data
+  - [x] Multiple file requests for the same file from multiple BSP nodes
   - [ ] BSP/BSP node validates data against `content_hash`
 
 ## How to run without Docker compose

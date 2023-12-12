@@ -1,5 +1,8 @@
 use std::{str::Utf8Error, string::String};
-use subxt::error::{DispatchError, MetadataError};
+use subxt::{
+	error::{DispatchError, MetadataError},
+	ext::codec,
+};
 use thiserror::Error;
 
 /// Crunch specific error messages
