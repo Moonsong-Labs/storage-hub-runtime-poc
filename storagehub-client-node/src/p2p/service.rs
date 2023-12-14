@@ -74,11 +74,11 @@ pub(crate) struct Service {
 }
 
 impl Service {
-	/// Start the ursa network service loop.
+	/// Start the client node service loop.
 	///
-	/// Poll `swarm` and `command_receiver` from [`UrsaService`].
-	/// - `swarm` handles the network events [Event].
-	/// - `command_receiver` handles inbound commands [Command].
+	/// Poll `swarm` and `command_receiver` from [`Service`].
+	/// - `swarm` handles the network events [`SwarmEvent`](libp2p::swarm::SwarmEvent).
+	/// - `command_receiver` handles inbound commands [`NetworkCommand`].
 	pub async fn run(mut self) -> Result<()> {
 		info!("Node starting up with peerId {:?}", self.swarm.local_peer_id());
 		loop {
