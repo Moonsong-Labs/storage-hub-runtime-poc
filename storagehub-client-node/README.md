@@ -18,7 +18,7 @@
   - [x] Multiple file requests for the same file from multiple BSP nodes
   - [ ] User validates BSP node is registered on chain
   - [ ] Add external address using `Identify` Behaviour (right now it only adds the address in the request_response `FileRequest` event)
-  - [ ] MSP/BSP node validates data received from user node against `content_hash` from `NewStorageRequest` event
+  - [ ] MSP/BSP node validates data received from user node against `fingerprint` from `NewStorageRequest` event
 
 ## Repository structure
 

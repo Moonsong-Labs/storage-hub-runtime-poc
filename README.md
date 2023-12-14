@@ -41,6 +41,10 @@ This will start the following services:
 
 - Backup Storage Provider (BSP) nodes
 
+    1. bsp-1 (alice)
+    2. bsp-2-1 (bob)
+    3. bsp-3-1 (charlie)
+
     These nodes will connect to the StorageHub runtime as a light client and start listening for file storage requests events and send transactions to volunteer to store files.
 
     > Transactions are signed using the `--dev-account` flag. (e.g. `alice`, `bob`, `charlie`)
@@ -49,8 +53,7 @@ This will start the following services:
 
 Before BSP nodes can volunteer to store files, they need to be registered with the StorageHub runtime.
 
-Execute the pallet Identity `registerUser` extrinsic in the [sudo](https://polkadot.js.org/apps/#/sudo) page for each of the BSP nodes.
-Each one should have a different dev-account and needs to be registered with the StorageHub runtime.
+Execute the pallet Identity `registerUser` extrinsic in the [sudo](https://polkadot.js.org/apps/#/sudo) page for each of the BSP nodes account (e.g. `alice`, `bob`, `charlie`)
 
 ![Alt text](./assets/sudo-register-user.png)
 
@@ -65,7 +68,7 @@ The important parameters to fill in is the:
 
 Now we can observe the following logs.
 
-BSP node logs:
+BSP (alice) node logs:
 
 ```log
 2023-12-12T20:54:21.878740Z  INFO libp2p_swarm: local_peer_id=12D3KooWSvD9mjiZsCxwH5zkJBTUELZYQ7qxpRw7NRYt8212GXWD
@@ -96,16 +99,18 @@ Notice the important logs are:
 User node logs:
 
 ```log
-2023-12-12T20:54:10.444220Z  INFO libp2p_swarm: local_peer_id=12D3KooWDV5MttiC2UGq1tGqsjC51ze89HtNv5xLJGi9XKChwFkq
-2023-12-12T20:54:10.444519Z  INFO storagehub_client::p2p::service: Node starting up with peerId PeerId("12D3KooWDV5MttiC2UGq1tGqsjC51ze89HtNv5xLJGi9XKChwFkq")
-2023-12-12T20:54:10.444785Z  INFO storagehub_client::p2p::swarm: [SwarmEvent::NewListenAddr] - listen address: /ip4/127.0.0.1/tcp/44913/p2p/12D3KooWDV5MttiC2UGq1tGqsjC51ze89HtNv5xLJGi9XKChwFkq
-2023-12-12T20:54:10.444846Z  INFO storagehub_client::p2p::swarm: [SwarmEvent::NewListenAddr] - listen address: /ip4/172.28.164.193/tcp/44913/p2p/12D3KooWDV5MttiC2UGq1tGqsjC51ze89HtNv5xLJGi9XKChwFkq
-2023-12-12T21:05:31.957858Z  INFO storagehub_client::p2p::request_response: [RequestResponseEvent::Message::Request] - sending FileResponse to peer 12D3KooWSvD9mjiZsCxwH5zkJBTUELZYQ7qxpRw7NRYt8212GXWD.
+2023-12-14 14:50:35 2023-12-14T19:50:35.823815Z  INFO libp2p_swarm: local_peer_id=12D3KooWFNnkbnfQC5zz9m8mMpXA73gqSTGMqMPVNkx2Cnw3jb6W
+2023-12-14 14:50:35 2023-12-14T19:50:35.823937Z  INFO storagehub_client::p2p::service: Node starting up with peerId PeerId("12D3KooWFNnkbnfQC5zz9m8mMpXA73gqSTGMqMPVNkx2Cnw3jb6W")
+2023-12-14 14:50:35 2023-12-14T19:50:35.824291Z  INFO storagehub_client::p2p::swarm: [SwarmEvent::NewListenAddr] - listen address: /ip4/127.0.0.1/tcp/34565/p2p/12D3KooWFNnkbnfQC5zz9m8mMpXA73gqSTGMqMPVNkx2Cnw3jb6W
+2023-12-14 14:50:35 2023-12-14T19:50:35.824333Z  INFO storagehub_client::p2p::swarm: [SwarmEvent::NewListenAddr] - listen address: /ip4/172.20.0.6/tcp/34565/p2p/12D3KooWFNnkbnfQC5zz9m8mMpXA73gqSTGMqMPVNkx2Cnw3jb6W
+2023-12-14 14:52:01 2023-12-14T19:52:01.598804Z  INFO storagehub_client::p2p::request_response: [RequestResponseEvent::Message::Request] - sending FileResponse to peer 12D3KooWQ5RrqmeLxyDARTiHxjSN1FfoDH7HP2qoMo6bYyKySimd.
+2023-12-14 14:52:01 2023-12-14T19:52:01.598908Z  INFO storagehub_client::p2p::request_response: [RequestResponseEvent::Message::Request] - sending FileResponse to peer 12D3KooWDWSe3L4cYSjCBUScz6yQ6zouh1B3uHouTPmTza1uUwQ3.
+2023-12-14 14:52:01 2023-12-14T19:52:01.598931Z  INFO storagehub_client::p2p::request_response: [RequestResponseEvent::Message::Request] - sending FileResponse to peer 12D3KooWSQnRZMx9WCp6Dc2jTFHAkDxdf3DTiVXCJfGDjvPPhutL.
 ```
 
 Notice the important logs are:
 
-- `sending FileResponse to peer ...`: The User node has sent the file to the BSP node.
+- `sending FileResponse to peer ...`: The User node has sent the file to the BSP node. This happened 3 times because there are 3 BSP nodes that requested the file.
 
 ## Updating the Runtime
 

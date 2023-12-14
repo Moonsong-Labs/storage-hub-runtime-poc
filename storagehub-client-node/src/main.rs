@@ -1,7 +1,10 @@
+//! Storagehub client node.
+
 use clap::{Parser, ValueEnum};
 use options::Options;
-use std::error::Error;
+use std::{env, error::Error};
 use tokio::spawn;
+use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 
 mod lightclient;
@@ -17,7 +20,12 @@ pub enum Role {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-	tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
+	let filter = if env::var(EnvFilter::DEFAULT_ENV).is_ok() {
+		EnvFilter::from_default_env()
+	} else {
+		EnvFilter::default().add_directive(LevelFilter::INFO.into())
+	};
+	tracing_subscriber::fmt().with_env_filter(filter).init();
 
 	let opts: Options = Options::parse();
 

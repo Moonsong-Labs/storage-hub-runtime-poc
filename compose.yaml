@@ -37,8 +37,6 @@ services:
       target: final
     ports:
       - "34565:34565"
-    environment:
-      - RUST_LOG=info
     command:
       - "--run-as"
       - "user"
@@ -57,8 +55,6 @@ services:
       target: final
     ports:
       - "23456:23456"
-    environment:
-      - RUST_LOG=info
     command:
       - "--run-as"
       - "bsp-provider"
@@ -81,8 +77,6 @@ services:
       target: final
     ports:
       - "23457:23457"
-    environment:
-      - RUST_LOG=info
     command:
       - "--run-as"
       - "bsp-provider"
@@ -105,8 +99,6 @@ services:
       target: final
     ports:
       - "23458:23458"
-    environment:
-      - RUST_LOG=info
     command:
       - "--run-as"
       - "bsp-provider"

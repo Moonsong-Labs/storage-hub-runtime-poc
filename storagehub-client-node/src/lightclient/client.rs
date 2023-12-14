@@ -57,7 +57,7 @@ impl Client {
 		command_sender: p2p::service::CommandSender,
 		download_path: String,
 	) -> Self {
-		let ws_address = config.ws_address.clone().unwrap_or(config.chain.ws_address());
+		let ws_address = config.ws_address.clone().unwrap_or(config.chain.bootnode());
 
 		let rpc_client = Self::create_rpc_client(ws_address.clone())
 			.await

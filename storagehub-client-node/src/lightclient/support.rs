@@ -11,7 +11,7 @@ pub(crate) enum SupportedRuntime {
 }
 
 impl SupportedRuntime {
-	pub(crate) fn ws_address(&self) -> String {
+	pub(crate) fn bootnode(&self) -> String {
 		match self {
 			Self::Local => "ws://127.0.0.1:9944".to_string(),
 			Self::Compose => "ws://storagehub:9944".to_string(),
