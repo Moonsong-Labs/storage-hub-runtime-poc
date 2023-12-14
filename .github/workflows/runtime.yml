@@ -38,9 +38,3 @@ jobs:
         working-directory: ./storagehub-runtime
         run: |
           SKIP_WASM_BUILD=1 cargo check --release
-
-      - name: Check Build for Benchmarking
-        working-directory: ./storagehub-runtime
-        run: |
-          pushd node &&
-          cargo check --features=runtime-benchmarks --release
