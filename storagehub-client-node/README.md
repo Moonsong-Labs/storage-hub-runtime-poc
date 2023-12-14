@@ -20,6 +20,21 @@
   - [ ] Add external address using `Identify` Behaviour (right now it only adds the address in the request_response `FileRequest` event)
   - [ ] MSP/BSP node validates data received from user node against `content_hash` from `NewStorageRequest` event
 
+## Repository structure
+
+The main components of this repository are structured as follows:
+
+- `p2p/`: Contains the [`libp2p`](https://github.com/libp2p/rust-libp2p) networking implementation for MSP/BSP and User nodes to communicate with each other.
+  - `service.rs`: Service initialization and service loop.
+  - `swarm.rs`: Swarm event handler.
+  - `identify.rs`: Swarm identify protocol event handler.
+  - `request_response.rs`: Swarm request/response protocol event handler.
+  - `commands.rs`: Inbound command handler.
+- `lightclient/`: Contains the [`subxt`](https://github.com/paritytech/subxt) light client implementation for the MSP/BSP and User nodes to listen to events and send extrinsics to StorageHub.
+  - `client.rs`: Client initialization and client loop.
+  - `local.rs`: Local/docker compose run loop, listening to events and sending extrinsics to StorageHub and sending commands to the `p2p` module.
+  - `support.rs`: Supported runtimes (local, docker compose, etc.).
+
 ## How to run locally
 
 ### Build and run the substrate node
