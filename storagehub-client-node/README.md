@@ -32,7 +32,7 @@ The main components of this repository are structured as follows:
   - `commands.rs`: Inbound command handler.
 - `lightclient/`: Contains the [`subxt`](https://github.com/paritytech/subxt) light client implementation for the MSP/BSP and User nodes to listen to events and send extrinsics to StorageHub.
   - `client.rs`: Client initialization and client loop.
-  - `local.rs`: Local/docker compose run loop, listening to events and sending extrinsics to StorageHub and sending commands to the `p2p` module.
+  - `local.rs`: Local/docker compose run loop, listening to events and sending extrinsics to StorageHub and sending commands to the `swarm`.
   - `support.rs`: Supported runtimes (local, docker compose, etc.).
 
 ## How to run locally
