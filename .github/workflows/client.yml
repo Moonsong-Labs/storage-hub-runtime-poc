@@ -1,4 +1,4 @@
-name: Check Set-Up & Build
+name: StorageHub Client Node CI
 
 # Controls when the action will run.
 on:
@@ -26,7 +26,7 @@ jobs:
         run: sudo apt-get install -y clang libssl-dev llvm libudev-dev protobuf-compiler
 
       - name: Install Rust
-        working-directory: ./storagehub-runtime
+        working-directory: ./storagehub-client-node
         run: |
           rustup update stable --no-self-update
           rustup target add wasm32-unknown-unknown
@@ -35,12 +35,11 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Check Build
-        working-directory: ./storagehub-runtime
+        working-directory: ./storagehub-client-node
         run: |
           SKIP_WASM_BUILD=1 cargo check --release
 
-      - name: Check Build for Benchmarking
-        working-directory: ./storagehub-runtime
+      - name: Check Test
+        working-directory: ./storagehub-client-node
         run: |
-          pushd node &&
-          cargo check --features=runtime-benchmarks --release
+          SKIP_WASM_BUILD=1 cargo test --release -- --nocapture

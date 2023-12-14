@@ -20,9 +20,9 @@ The following diagram shows the basic architecture of the system and the flow of
 1. StorageHub runtime registers the BSP node as a Backup Storage Provider.
 2. User node sends a transaction `request_storage` to the StorageHub runtime to store a file.
 3. StorageHub runtime deposits `NewRequestStorage` event.
-4. BSP node receives the event and sends a transaction to the StorageHub runtime to volunteer `bsp_volunteer` to store the file.
-5. BSP node attempts to establish connection with the User node and requests the file.
-6. User node sends the file to the BSP node.
+4. BSP nodes receives the event and sends a transaction to the StorageHub runtime to volunteer `bsp_volunteer` to store the file.
+5. BSP nodes attempt to establish connection with the User node and requests the file.
+6. User node sends the file to the BSP nodes.
 
 ## Getting Started
 
@@ -39,17 +39,21 @@ This will start the following services:
 
     The User node is built with the `./storagehub-client-node/files-to-upload` folder containing test files ready to upload to the StorageHub runtime.
 
-- Backup Storage Provider (BSP) node
+- Backup Storage Provider (BSP) nodes
 
-    This will connect to the StorageHub runtime as a light client and start listening for file storage requests events and send transactions to volunteer to store files.
+    1. bsp-1 (alice)
+    2. bsp-2-1 (bob)
+    3. bsp-3-1 (charlie)
 
-    > Transactions are signed using Alice's keypair by default.
+    These nodes will connect to the StorageHub runtime as a light client and start listening for file storage requests events and send transactions to volunteer to store files.
+
+    > Transactions are signed using the `--dev-account` flag. (e.g. `alice`, `bob`, `charlie`)
 
 ## Try it out
 
-Before a BSP node can volunteer to store files, it needs to be registered with the StorageHub runtime. Since the BSP node signs transactions using Alice's keypair, we need to register Alice as a user.
+Before BSP nodes can volunteer to store files, they need to be registered with the StorageHub runtime.
 
-Execute the pallet Identity `registerUser` extrinsic in the [sudo](https://polkadot.js.org/apps/#/sudo) page.
+Execute the pallet Identity `registerUser` extrinsic in the [sudo](https://polkadot.js.org/apps/#/sudo) page for each of the BSP nodes account (e.g. `alice`, `bob`, `charlie`)
 
 ![Alt text](./assets/sudo-register-user.png)
 
@@ -59,27 +63,25 @@ Next, request to store a file by executing the pallet StorageHub `requestStorage
 
 The important parameters to fill in is the:
 
-- `location`: The name of the file (this is considered to by the id of the file).
-- `senderMultiaddress`: The multiaddress of the User node. This is used by the BSP node to establish a connection with the User node to request the file.
+- `location`: The name of the file (e.g. `lorem`, `lorem-x`)
+- `senderMultiaddress`: The multiaddress of the User node (use the public address multiaddress, not the localhost). This is used by the BSP nodes to establish a connection with the User node to request the file.
 
-Now we can observe the following logs from the BSP node:
+Now we can observe the following logs.
+
+BSP (alice) node logs:
 
 ```log
-2023-12-06 15:39:25 2023-12-06T20:39:25.924784Z  INFO libp2p_swarm: local_peer_id=12D3KooWPjceQrSwdWXPyLLeABRXmuqt69Rg3sBYbU1Nft9HyQ6X
-2023-12-06 15:39:25 2023-12-06T20:39:25.928845Z  INFO storagehub_client::client: Connected to Development network using ws://storagehub:9944 * Substrate node Substrate Node vRuntimeVersion { spec_version: 100, transaction_version: 1 }
-2023-12-06 15:39:25 2023-12-06T20:39:25.928917Z  INFO storagehub_client::runtimes::local: Subscribe 'NewStorageRequest' on-chain finalized event
-2023-12-06 15:39:26 2023-12-06T20:39:26.079171Z  INFO storagehub_client: Multiaddr listening on /ip4/127.0.0.1/tcp/23456/p2p/12D3KooWPjceQrSwdWXPyLLeABRXmuqt69Rg3sBYbU1Nft9HyQ6X
-2023-12-06 15:39:26 2023-12-06T20:39:26.079304Z  INFO storagehub_client: Multiaddr listening on /ip4/172.23.0.4/tcp/23456/p2p/12D3KooWPjceQrSwdWXPyLLeABRXmuqt69Rg3sBYbU1Nft9HyQ6X
-2023-12-06 16:44:55 2023-12-06T21:44:55.482623Z  INFO storagehub_client::runtimes::local: Received NewStorageRequest event - account_id: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY, peer: /ip4/172.23.0.3/tcp/34567/p2p/12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3, file_id: lorem, content_hash: 0x0000…0000, size: 0
-2023-12-06 16:45:12 2023-12-06T21:45:12.837356Z  INFO storagehub_client::runtimes::local: Successfully volunteered for file_id: lorem
-2023-12-06 16:45:12 2023-12-06T21:45:12.843654Z  INFO storagehub_client: Established new connection peer=12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3 endpoint=Dialer { address: "/ip4/172.23.0.3/tcp/34567/p2p/12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3", role_override: Dialer }
-2023-12-06 16:45:12 2023-12-06T21:45:12.939965Z  INFO storagehub_client: Identify sent to PeerId("12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3")
-2023-12-06 16:45:12 2023-12-06T21:45:12.940466Z  INFO storagehub_client: Identify received: Info { public_key: PublicKey { publickey: Ed25519(PublicKey(compressed): 6b79c57e6a95239282c4818e96112f3f3a401ba97a564c23852a3f1ea5fc) }, protocol_version: "/storagehub/0.1.0", agent_version: "rust-libp2p/0.44.0", listen_addrs: ["/ip4/172.23.0.3/tcp/34567", "/ip4/127.0.0.1/tcp/34567"], protocols: ["/ipfs/id/push/1.0.0", "/storagehub/0.1.0", "/ipfs/id/1.0.0"], observed_addr: "/ip4/172.23.0.4/tcp/50216" }
-2023-12-06 16:45:12 2023-12-06T21:45:12.940570Z  INFO storagehub_client: New external address candidate /ip4/172.23.0.4/tcp/23456
-2023-12-06 16:45:12 2023-12-06T21:45:12.992677Z  INFO storagehub_client::runtimes::local: Received file from peer PeerId("12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3")
-2023-12-06 16:45:12 2023-12-06T21:45:12.993700Z  INFO storagehub_client::runtimes::local: File downloaded to: /tmp/downloaded-files/lorem
-2023-12-06 16:45:12 2023-12-06T21:45:12.993726Z  INFO storagehub_client::runtimes::local: Waiting 3 seconds before run batch
-2023-12-06 16:45:12 Dialing 12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3
+2023-12-12T20:54:21.878740Z  INFO libp2p_swarm: local_peer_id=12D3KooWSvD9mjiZsCxwH5zkJBTUELZYQ7qxpRw7NRYt8212GXWD
+2023-12-12T20:54:21.879046Z  INFO storagehub_client::p2p::service: Node starting up with peerId PeerId("12D3KooWSvD9mjiZsCxwH5zkJBTUELZYQ7qxpRw7NRYt8212GXWD")
+2023-12-12T20:54:21.879298Z  INFO storagehub_client::p2p::swarm: [SwarmEvent::NewListenAddr] - listen address: /ip4/127.0.0.1/tcp/35436/p2p/12D3KooWSvD9mjiZsCxwH5zkJBTUELZYQ7qxpRw7NRYt8212GXWD
+2023-12-12T20:54:21.879362Z  INFO storagehub_client::p2p::swarm: [SwarmEvent::NewListenAddr] - listen address: /ip4/172.28.164.193/tcp/35436/p2p/12D3KooWSvD9mjiZsCxwH5zkJBTUELZYQ7qxpRw7NRYt8212GXWD
+2023-12-12T20:54:21.894297Z  INFO storagehub_client::lightclient::client: Connected to Development network using ws://127.0.0.1:9944 * Substrate node Substrate Node vRuntimeVersion { spec_version: 100, transaction_version: 1 }
+2023-12-12T20:54:21.894474Z  INFO storagehub_client::lightclient::local: Subscribe 'NewStorageRequest' on-chain finalized event
+2023-12-12T21:05:13.987812Z  INFO storagehub_client::lightclient::local: Received NewStorageRequest event - account_id: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY, peer: /ip4/127.0.0.1/tcp/44913/p2p/12D3KooWDV5MttiC2UGq1tGqsjC51ze89HtNv5xLJGi9XKChwFkq, file_id: lorem, content_hash: 0x0000…0000, size: 0
+2023-12-12T21:05:31.842157Z  INFO storagehub_client::lightclient::local: Successfully volunteered for file_id: lorem
+2023-12-12T21:05:32.007988Z  INFO storagehub_client::p2p::request_response: [RequestResponseEvent::Message::Response] - received FileResponse from peer 12D3KooWDV5MttiC2UGq1tGqsjC51ze89HtNv5xLJGi9XKChwFkq.
+2023-12-12T21:05:32.008004Z  INFO storagehub_client::lightclient::local: Received file from peer PeerId("12D3KooWDV5MttiC2UGq1tGqsjC51ze89HtNv5xLJGi9XKChwFkq")
+2023-12-12T21:05:32.008098Z  INFO storagehub_client::lightclient::local: File downloaded to: /tmp/downloaded-files/bob/lorem
 ```
 
 Notice the important logs are:
@@ -93,6 +95,22 @@ Notice the important logs are:
 - `File downloaded to: /tmp/downloaded-files/lorem`: The file has been downloaded to the BSP node.
 
 > You can re-execute the `requestStorage` extrinsic for the other `lorem-x` files.
+
+User node logs:
+
+```log
+2023-12-14 14:50:35 2023-12-14T19:50:35.823815Z  INFO libp2p_swarm: local_peer_id=12D3KooWFNnkbnfQC5zz9m8mMpXA73gqSTGMqMPVNkx2Cnw3jb6W
+2023-12-14 14:50:35 2023-12-14T19:50:35.823937Z  INFO storagehub_client::p2p::service: Node starting up with peerId PeerId("12D3KooWFNnkbnfQC5zz9m8mMpXA73gqSTGMqMPVNkx2Cnw3jb6W")
+2023-12-14 14:50:35 2023-12-14T19:50:35.824291Z  INFO storagehub_client::p2p::swarm: [SwarmEvent::NewListenAddr] - listen address: /ip4/127.0.0.1/tcp/34565/p2p/12D3KooWFNnkbnfQC5zz9m8mMpXA73gqSTGMqMPVNkx2Cnw3jb6W
+2023-12-14 14:50:35 2023-12-14T19:50:35.824333Z  INFO storagehub_client::p2p::swarm: [SwarmEvent::NewListenAddr] - listen address: /ip4/172.20.0.6/tcp/34565/p2p/12D3KooWFNnkbnfQC5zz9m8mMpXA73gqSTGMqMPVNkx2Cnw3jb6W
+2023-12-14 14:52:01 2023-12-14T19:52:01.598804Z  INFO storagehub_client::p2p::request_response: [RequestResponseEvent::Message::Request] - sending FileResponse to peer 12D3KooWQ5RrqmeLxyDARTiHxjSN1FfoDH7HP2qoMo6bYyKySimd.
+2023-12-14 14:52:01 2023-12-14T19:52:01.598908Z  INFO storagehub_client::p2p::request_response: [RequestResponseEvent::Message::Request] - sending FileResponse to peer 12D3KooWDWSe3L4cYSjCBUScz6yQ6zouh1B3uHouTPmTza1uUwQ3.
+2023-12-14 14:52:01 2023-12-14T19:52:01.598931Z  INFO storagehub_client::p2p::request_response: [RequestResponseEvent::Message::Request] - sending FileResponse to peer 12D3KooWSQnRZMx9WCp6Dc2jTFHAkDxdf3DTiVXCJfGDjvPPhutL.
+```
+
+Notice the important logs are:
+
+- `sending FileResponse to peer ...`: The User node has sent the file to the BSP node. This happened 3 times because there are 3 BSP nodes that requested the file.
 
 ## Updating the Runtime
 

@@ -4,20 +4,38 @@
 
 ## Features
 
-- [x] `subxt` (light client)
+- [ ] `subxt` (light client)
   - [x] Connect to substrate node
   - [x] Subscribe to events
   - [x] Send extrinsics
   - [x] BSP node dispatches `bsp_volunteer` extrinsic prior to sending file request
+  - [ ] Receive and queue multiple `NewStorageRequest`s events (right now it only can process one at a time)
 - [ ] `libp2p` (peer-to-peer networking)
   - [x] BSP node sends file request
-  - [ ] User validates BSP node is registered on chain
   - [x] Establish connection between User and BSP node
   - [x] Send file data
   - [x] Receive file data
-  - [ ] BSP/BSP node validates data against `content_hash`
+  - [x] Multiple file requests for the same file from multiple BSP nodes
+  - [ ] User validates BSP node is registered on chain
+  - [ ] Add external address using `Identify` Behaviour (right now it only adds the address in the request_response `FileRequest` event)
+  - [ ] MSP/BSP node validates data received from user node against `fingerprint` from `NewStorageRequest` event
 
-## How to run without Docker compose
+## Repository structure
+
+The main components of this repository are structured as follows:
+
+- `p2p/`: Contains the [`libp2p`](https://github.com/libp2p/rust-libp2p) networking implementation for MSP/BSP and User nodes to communicate with each other.
+  - `service.rs`: Service initialization and service loop.
+  - `swarm.rs`: Swarm event handler.
+  - `identify.rs`: Swarm identify protocol event handler.
+  - `request_response.rs`: Swarm request/response protocol event handler.
+  - `commands.rs`: Inbound command handler.
+- `lightclient/`: Contains the [`subxt`](https://github.com/paritytech/subxt) light client implementation for the MSP/BSP and User nodes to listen to events and send extrinsics to StorageHub.
+  - `client.rs`: Client initialization and client loop.
+  - `local.rs`: Local/docker compose run loop, listening to events and sending extrinsics to StorageHub and sending commands to the `swarm`.
+  - `support.rs`: Supported runtimes (local, docker compose, etc.).
+
+## How to run locally
 
 ### Build and run the substrate node
 
@@ -33,27 +51,30 @@ cargo build --release
 ### Run BSP node
 
 ```bash
-cargo run -- --secret-key-seed 1 --run-as bsp-provider --chain local --port 35435 --download-path "/tmp/downloaded-files"
+RUST_LOG=info cargo run -- --run-as bsp-provider --chain local --port 35436 --dev-account alice --download-path "./tmp/downloaded-files/alice"
 ```
 
 This will connect to the substrate node template via `subxt` (which utilizes `smoldot` in the background) and will subscribe to events being triggered by the substrate node.
 
-It will specifically listen to the `RequestStore` event which contains all the information required for the BSP node to send a file request to the user's peer address which should contain the file.
+It will specifically listen to the `NewStorageRequest` event which contains all the information required for the BSP node to send a file request to the user's peer address.
 
 Output (truncated):
 
 ```bash
-INFO libp2p_swarm: local_peer_id=12D3KooWPjceQrSwdWXPyLLeABRXmuqt69Rg3sBYbU1Nft9HyQ6X
-INFO main_sp: Multiaddr listening on /ip4/127.0.0.1/tcp/35435/p2p/12D3KooWPjceQrSwdWXPyLLeABRXmuqt69Rg3sBYbU1Nft9HyQ6X
-INFO main_sp: Multiaddr listening on /ip4/172.28.164.193/tcp/35435/p2p/12D3KooWPjceQrSwdWXPyLLeABRXmuqt69Rg3sBYbU1Nft9HyQ6X
-INFO main_sp::client: Connected to Development network using ws://127.0.0.1:9944 * Substrate node Substrate Node vRuntimeVersion { spec_version: 100, transaction_version: 1 }
-INFO main_sp::runtimes::local: Subscribe 'RequestStore' on-chain finalized event
+2023-12-12T20:54:21.878740Z  INFO libp2p_swarm: local_peer_id=12D3KooWSvD9mjiZsCxwH5zkJBTUELZYQ7qxpRw7NRYt8212GXWD
+2023-12-12T20:54:21.879046Z  INFO storagehub_client::p2p::service: Node starting up with peerId PeerId("12D3KooWSvD9mjiZsCxwH5zkJBTUELZYQ7qxpRw7NRYt8212GXWD")
+2023-12-12T20:54:21.879298Z  INFO storagehub_client::p2p::swarm: [SwarmEvent::NewListenAddr] - listen address: /ip4/127.0.0.1/tcp/35436/p2p/12D3KooWSvD9mjiZsCxwH5zkJBTUELZYQ7qxpRw7NRYt8212GXWD
+2023-12-12T20:54:21.879362Z  INFO storagehub_client::p2p::swarm: [SwarmEvent::NewListenAddr] - listen address: /ip4/172.28.164.193/tcp/35436/p2p/12D3KooWSvD9mjiZsCxwH5zkJBTUELZYQ7qxpRw7NRYt8212GXWD
+2023-12-12T20:54:21.894297Z  INFO storagehub_client::lightclient::client: Connected to Development network using ws://127.0.0.1:9944 * Substrate node Substrate Node vRuntimeVersion { spec_version: 100, transaction_version: 1 }
+2023-12-12T20:54:21.894474Z  INFO storagehub_client::lightclient::local: Subscribe 'NewStorageRequest' on-chain finalized event
 ```
+
+> You can run multiple BSP nodes by changing the `dev-account` flag to `bob` or `charlie`, changing the `download-path` flag to a different directory and change the `port` flag to a different port.
 
 ### Run User node
 
 ```bash
-cargo run -- --secret-key-seed 2 --run-as user --port 44913 --upload-path "./files-to-upload"
+RUST_LOG=info cargo run -- --run-as user --port 44913 --upload-path "./files-to-upload"
 ```
 
 This will wait for any file requests from any nodes (this will be improved to wait for specific nodes returned by the runtime) and send the file data.
@@ -61,7 +82,11 @@ This will wait for any file requests from any nodes (this will be improved to wa
 Output (truncated):
 
 ```bash
-INFO libp2p_swarm: local_peer_id=12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3
-INFO main_sp: Multiaddr listening on /ip4/127.0.0.1/tcp/44913/p2p/12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3
-INFO main_sp: Multiaddr listening on /ip4/172.28.164.193/tcp/44913/p2p/12D3KooWH3uVF6wv47WnArKHk5p6cvgCJEb74UTmxztmQDc298L3
+2023-12-12T20:54:10.444220Z  INFO libp2p_swarm: local_peer_id=12D3KooWDV5MttiC2UGq1tGqsjC51ze89HtNv5xLJGi9XKChwFkq
+2023-12-12T20:54:10.444519Z  INFO storagehub_client::p2p::service: Node starting up with peerId PeerId("12D3KooWDV5MttiC2UGq1tGqsjC51ze89HtNv5xLJGi9XKChwFkq")
+2023-12-12T20:54:10.444785Z  INFO storagehub_client::p2p::swarm: [SwarmEvent::NewListenAddr] - listen address: /ip4/127.0.0.1/tcp/44913/p2p/12D3KooWDV5MttiC2UGq1tGqsjC51ze89HtNv5xLJGi9XKChwFkq
+2023-12-12T20:54:10.444846Z  INFO storagehub_client::p2p::swarm: [SwarmEvent::NewListenAddr] - listen address: /ip4/172.28.164.193/tcp/44913/p2p/12D3KooWDV5MttiC2UGq1tGqsjC51ze89HtNv5xLJGi9XKChwFkq
 ```
+
+> Any extrinsics executed requiring a Multiaddress will need to be supplied with the `127.0.0.1` address as the nodes are running locally on your machine.
+> In the Docker compose environment, the public IP address of the node will need to be used.

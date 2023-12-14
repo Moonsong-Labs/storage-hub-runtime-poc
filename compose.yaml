@@ -38,8 +38,6 @@ services:
     ports:
       - "34565:34565"
     command:
-      - "--secret-key-seed"
-      - "1"
       - "--run-as"
       - "user"
       - "--port"
@@ -58,8 +56,6 @@ services:
     ports:
       - "23456:23456"
     command:
-      - "--secret-key-seed"
-      - "2"
       - "--run-as"
       - "bsp-provider"
       - "--chain"
@@ -70,6 +66,50 @@ services:
       - "23456"
       - "--download-path"
       - "/tmp/downloaded-files"
+  bsp-2:
+    depends_on:
+      storagehub:
+        condition: service_healthy
+    networks:
+      - internet
+    build:
+      context: ./storagehub-client-node
+      target: final
+    ports:
+      - "23457:23457"
+    command:
+      - "--run-as"
+      - "bsp-provider"
+      - "--chain"
+      - "compose"
+      - "--dev-account"
+      - "bob"
+      - "--port"
+      - "23457"
+      - "--download-path"
+      - "/tmp/downloaded-files"
+  bsp-3:
+    depends_on:
+      storagehub:
+        condition: service_healthy
+    networks:
+      - internet
+    build:
+      context: ./storagehub-client-node
+      target: final
+    ports:
+      - "23458:23458"
+    command:
+      - "--run-as"
+      - "bsp-provider"
+      - "--chain"
+      - "compose"
+      - "--dev-account"
+      - "charlie"
+      - "--port"
+      - "23458"
+      - "--download-path"
+      - "/tmp/downloaded-files"  
 
 networks:
   network-a:
